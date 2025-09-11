@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Reference to layers -->
+    <ProjectReference Include="..\Papernote.Notes.Core\Papernote.Notes.Core.csproj" />
+  <ProjectReference Include="..\Papernote.SharedMicroservices\Papernote.SharedMicroservices.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -30,9 +30,13 @@ jobs:
       matrix:
         service:
           - Papernote.Auth.API
+          - Papernote.Auth.Core
+          - Papernote.Auth.Infrastructure
           - Papernote.Notes.API
+          - Papernote.Notes.Core
+          - Papernote.Notes.Infrastructure
           - Papernote.Gateway
-          - Papernote.Shared
+          - Papernote.SharedMicroservices
 
     steps:
       - name: Checkout code
