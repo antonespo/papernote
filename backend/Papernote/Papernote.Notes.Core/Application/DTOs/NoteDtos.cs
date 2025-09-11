@@ -20,6 +20,14 @@ public record UpdateNoteDto(
 );
 
 /// <summary>
+/// DTO for searching notes by text content and/or tags
+/// </summary>
+public record SearchNotesDto(
+    string? Text = null,
+    List<string>? Tags = null
+);
+
+/// <summary>
 /// DTO for note response
 /// </summary>
 public class NoteDto

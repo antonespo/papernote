@@ -113,20 +113,23 @@ public class NoteService : INoteService
         }
     }
 
-    public async Task<Result<IEnumerable<NoteSummaryDto>>> GetNotesByTagAsync(string tag, CancellationToken cancellationToken = default)
+    public async Task<Result<IEnumerable<NoteSummaryDto>>> SearchNotesAsync(SearchNotesDto searchDto, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(tag))
-            return ResultBuilder.BadRequest<IEnumerable<NoteSummaryDto>>("Tag cannot be empty");
+        if (searchDto is null)
+            return ResultBuilder.BadRequest<IEnumerable<NoteSummaryDto>>("Search request cannot be null");
+
+        if (string.IsNullOrWhiteSpace(searchDto.Text) && (searchDto.Tags == null || searchDto.Tags.Count == 0))
+            return ResultBuilder.BadRequest<IEnumerable<NoteSummaryDto>>("At least one search parameter (text or tags) must be provided");
 
         try
         {
-            var notes = await _noteRepository.GetByTagAsync(tag, cancellationToken);
+            var notes = await _noteRepository.SearchNotesAsync(searchDto.Text, searchDto.Tags, cancellationToken);
             var noteDtos = _mapper.Map<IEnumerable<NoteSummaryDto>>(notes);
             return ResultBuilder.Success(noteDtos);
         }
         catch (Exception ex)
         {
-            return ResultBuilder.InternalServerError<IEnumerable<NoteSummaryDto>>($"Failed to retrieve notes by tag: {ex.Message}");
+            return ResultBuilder.InternalServerError<IEnumerable<NoteSummaryDto>>($"Failed to search notes: {ex.Message}");
         }
     }
 
@@ -147,19 +150,6 @@ public class NoteService : INoteService
         catch (Exception ex)
         {
             return ResultBuilder.InternalServerError($"Failed to delete note: {ex.Message}");
-        }
-    }
-
-    public async Task<Result<int>> GetNoteCountAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var count = await _noteRepository.GetCountAsync(cancellationToken);
-            return ResultBuilder.Success(count);
-        }
-        catch (Exception ex)
-        {
-            return ResultBuilder.InternalServerError<int>($"Failed to get note count: {ex.Message}");
         }
     }
 }

@@ -1,4 +1,5 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using NpgsqlTypes;
 using Papernote.Notes.Core.Domain.Entities;
 using Papernote.Notes.Core.Domain.Interfaces;
 using Papernote.Notes.Infrastructure.Persistence;
@@ -31,17 +32,7 @@ public class NoteRepository : INoteRepository
     {
         return await _context.Notes
             .Include(n => n.NoteTags)
-            .OrderByDescending(n => n.UpdatedAt)
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<IEnumerable<Note>> GetByTagAsync(string tag, CancellationToken cancellationToken = default)
-    {
-        var tagName = tag.ToLowerInvariant();
-
-        return await _context.Notes
-            .Include(n => n.NoteTags)
-            .Where(n => n.NoteTags.Any(nt => nt.TagName == tagName))
+            .AsNoTracking()
             .OrderByDescending(n => n.UpdatedAt)
             .ToListAsync(cancellationToken);
     }
@@ -76,26 +67,31 @@ public class NoteRepository : INoteRepository
             .AnyAsync(n => n.Id == id, cancellationToken);
     }
 
-    public async Task<int> GetCountAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Note>> SearchNotesAsync(string? searchText, List<string>? tags, CancellationToken ct = default)
     {
-        return await _context.Notes
-            .CountAsync(cancellationToken);
-    }
+        var q = _context.Notes.AsNoTracking().AsQueryable();
 
-    public async Task<IEnumerable<Note>> SearchAsync(string searchText, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(searchText))
+        if (tags is { Count: > 0 })
         {
-            return await GetAllAsync(cancellationToken);
+            var normalized = tags.Select(t => t.ToLowerInvariant()).ToList();
+            q = q.Where(n => n.NoteTags.Any(nt => normalized.Contains(nt.TagName)));
         }
 
-        var searchTerm = $"%{searchText.ToLowerInvariant()}%";
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            var trimmedSearchText = searchText.Trim();
+            
+            q = q.Where(n => EF.Property<NpgsqlTsVector>(n, "SearchVector").Matches(EF.Functions.WebSearchToTsQuery("italian", trimmedSearchText)))
+                 .OrderByDescending(n => EF.Property<NpgsqlTsVector>(n, "SearchVector").RankCoverDensity(EF.Functions.WebSearchToTsQuery("italian", trimmedSearchText)))
+                 .ThenByDescending(n => n.UpdatedAt);
+        }
+        else
+        {
+            q = q.OrderByDescending(n => n.UpdatedAt);
+        }
 
-        return await _context.Notes
-            .Include(n => n.NoteTags)
-            .Where(n => EF.Functions.Like(n.Title.ToLower(), searchTerm) ||
-                       EF.Functions.Like(n.Content.ToLower(), searchTerm))
-            .OrderByDescending(n => n.UpdatedAt)
-            .ToListAsync(cancellationToken);
+        q = q.Include(n => n.NoteTags);
+
+        return await q.ToListAsync(ct);
     }
 }

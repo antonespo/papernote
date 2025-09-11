@@ -12,7 +12,6 @@ public interface INoteService
     Task<Result<NoteDto>> UpdateNoteAsync(UpdateNoteDto updateNoteDto, CancellationToken cancellationToken = default);
     Task<Result<NoteDto>> GetNoteByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Result<IEnumerable<NoteSummaryDto>>> GetNotesAsync(CancellationToken cancellationToken = default);
-    Task<Result<IEnumerable<NoteSummaryDto>>> GetNotesByTagAsync(string tag, CancellationToken cancellationToken = default);
+    Task<Result<IEnumerable<NoteSummaryDto>>> SearchNotesAsync(SearchNotesDto searchDto, CancellationToken cancellationToken = default);
     Task<Result> DeleteNoteAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<Result<int>> GetNoteCountAsync(CancellationToken cancellationToken = default);
 }

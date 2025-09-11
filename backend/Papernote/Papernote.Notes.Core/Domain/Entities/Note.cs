@@ -1,8 +1,5 @@
 namespace Papernote.Notes.Core.Domain.Entities;
 
-/// <summary>
-/// Represents a note in the system
-/// </summary>
 public class Note
 {
     public Guid Id { get; private set; }
@@ -11,7 +8,6 @@ public class Note
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
     public bool IsDeleted { get; private set; }
-
     public List<NoteTag> NoteTags { get; private set; } = new();
 
     private Note() { }
@@ -24,7 +20,6 @@ public class Note
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
         IsDeleted = false;
-        
         NoteTags = tags?.Select(tag => new NoteTag(Id, tag)).ToList() ?? new();
     }
 
@@ -55,5 +50,5 @@ public class Note
     }
 
     public IEnumerable<string> GetTagNames() => NoteTags.Select(nt => nt.TagName);
-    public bool HasTag(string tagName) => NoteTags.Any(nt => nt.TagName == tagName.ToLowerInvariant());
+    public bool HasTag(string tagName) => NoteTags.Any(nt => nt.TagName.Equals(tagName, StringComparison.OrdinalIgnoreCase));
 }

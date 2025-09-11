@@ -16,12 +16,6 @@ public class NotesController : ApiControllerBase
         _noteService = noteService;
     }
 
-    /// <summary>
-    /// Retrieves a note by its unique identifier
-    /// </summary>
-    /// <param name="id">The unique identifier of the note</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>The note if found, otherwise a 404 Not Found</returns>
     [HttpGet("{id:guid}")]
     [ProducesResponseType<NoteDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -32,11 +26,6 @@ public class NotesController : ApiControllerBase
         return result.ToActionResult();
     }
 
-    /// <summary>
-    /// Retrieves all notes for the current user
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>A collection of note summaries</returns>
     [HttpGet]
     [ProducesResponseType<IEnumerable<NoteSummaryDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
@@ -46,35 +35,48 @@ public class NotesController : ApiControllerBase
         return result.ToActionResult();
     }
 
-    /// <summary>
-    /// Creates a new note
-    /// </summary>
-    /// <param name="request">The note creation request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>The created note</returns>
+    [HttpGet("search")]
+    [ProducesResponseType<IEnumerable<NoteSummaryDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> SearchNotes(
+        [FromQuery] string? text = null,
+        [FromQuery] string? tags = null,
+        CancellationToken cancellationToken = default)
+    {
+        var tagList = !string.IsNullOrWhiteSpace(tags)
+            ? tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList()
+            : null;
+
+        var searchDto = new SearchNotesDto(text, tagList);
+        var result = await _noteService.SearchNotesAsync(searchDto, cancellationToken);
+        return result.ToActionResult();
+    }
+
     [HttpPost]
-    [ProducesResponseType<NoteDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<NoteDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Create([FromBody] CreateNoteDto request, CancellationToken cancellationToken)
     {
-        // Validate model state
         var validationError = this.ValidateModelState();
         if (validationError != null)
             return validationError.ToActionResult();
 
         var result = await _noteService.CreateNoteAsync(request, cancellationToken);
+
+        if (result.IsSuccess)
+        {
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = result.Value!.Id },
+                result.Value);
+        }
+
         return result.ToActionResult();
     }
 
-    /// <summary>
-    /// Updates an existing note
-    /// </summary>
-    /// <param name="id">The unique identifier of the note to update</param>
-    /// <param name="request">The note update request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>The updated note</returns>
     [HttpPut("{id:guid}")]
     [ProducesResponseType<NoteDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -83,12 +85,10 @@ public class NotesController : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateNoteDto request, CancellationToken cancellationToken)
     {
-        // Validate ID match
         var idValidationError = ControllerExtensions.ValidateIdMatch(id, request.Id);
         if (idValidationError != null)
             return idValidationError.ToActionResult();
 
-        // Validate model state
         var validationError = this.ValidateModelState();
         if (validationError != null)
             return validationError.ToActionResult();
@@ -97,12 +97,6 @@ public class NotesController : ApiControllerBase
         return result.ToActionResult();
     }
 
-    /// <summary>
-    /// Deletes a note
-    /// </summary>
-    /// <param name="id">The unique identifier of the note to delete</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>No content if successful</returns>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
