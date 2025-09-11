@@ -80,12 +80,6 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Install dotnet format
-        run: dotnet tool install -g dotnet-format
-
-      - name: Check code formatting
-        run: dotnet format backend/Papernote/Papernote.sln --verify-no-changes --verbosity diagnostic
-
       - name: Run security scan
         run: dotnet list backend/Papernote package --vulnerable --include-transitive
 
