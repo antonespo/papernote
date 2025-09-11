@@ -80,10 +80,8 @@ obj/
 # Npm/Node (per progetti fullstack)
 node_modules/
 
-# Docker
+# Docker - ignora solo i file temporanei, NON i Dockerfile
 *.container
-*.dockerfile
-Dockerfile*
 .dockerignore
 
 # Logs
