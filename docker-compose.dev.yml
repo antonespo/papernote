@@ -32,8 +32,8 @@ services:
     ports:
       - "5001:8080"
     volumes:
-      - ./backend/Papernote/Papernote.Auth.API:/app:rw
-    working_dir: /app
+      - ./backend/Papernote:/src:rw
+    working_dir: /src/Papernote.Auth.API
     command: ["dotnet", "watch", "run", "--urls", "http://+:8080"]
     depends_on:
       - postgres
@@ -52,8 +52,8 @@ services:
     ports:
       - "5002:8080"
     volumes:
-      - ./backend/Papernote/Papernote.Notes.API:/app:rw
-    working_dir: /app
+      - ./backend/Papernote:/src:rw
+    working_dir: /src/Papernote.Notes.API
     command: ["dotnet", "watch", "run", "--urls", "http://+:8080"]
     depends_on:
       - postgres
@@ -72,8 +72,8 @@ services:
     ports:
       - "5000:8080"
     volumes:
-      - ./backend/Papernote/Papernote.Gateway:/app:rw
-    working_dir: /app
+      - ./backend/Papernote:/src:rw
+    working_dir: /src/Papernote.Gateway
     command: ["dotnet", "watch", "run", "--urls", "http://+:8080"]
     depends_on:
       - auth-service

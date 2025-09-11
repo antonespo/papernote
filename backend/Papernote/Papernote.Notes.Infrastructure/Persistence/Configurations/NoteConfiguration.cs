@@ -32,11 +32,6 @@ public class NoteConfiguration : IEntityTypeConfiguration<Note>
             .HasMaxLength(50000)
             .IsRequired();
 
-        // UserId
-        builder.Property(n => n.UserId)
-            .HasColumnName("user_id")
-            .IsRequired();
-
         // Timestamps
         builder.Property(n => n.CreatedAt)
             .HasColumnName("created_at")
@@ -57,23 +52,15 @@ public class NoteConfiguration : IEntityTypeConfiguration<Note>
             .HasForeignKey(nt => nt.NoteId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasMany(n => n.NoteShares)
-            .WithOne(ns => ns.Note)
-            .HasForeignKey(ns => ns.NoteId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         // Indexes
-        builder.HasIndex(n => n.UserId)
-            .HasDatabaseName("ix_notes_user_id");
-
         builder.HasIndex(n => n.CreatedAt)
             .HasDatabaseName("ix_notes_created_at");
 
-        builder.HasIndex(n => n.IsDeleted)
-            .HasDatabaseName("ix_notes_is_deleted");
-
         builder.HasIndex(n => n.UpdatedAt)
             .HasDatabaseName("ix_notes_updated_at");
+
+        builder.HasIndex(n => n.IsDeleted)
+            .HasDatabaseName("ix_notes_is_deleted");
 
         // Query filter for soft delete
         builder.HasQueryFilter(n => !n.IsDeleted);

@@ -1,23 +1,29 @@
 namespace Papernote.Notes.Core.Domain.Entities;
 
-/// <summary>
-/// Represents the many-to-many relationship between Notes and Tags
-/// </summary>
 public class NoteTag
 {
     public Guid NoteId { get; private set; }
-    public Guid TagId { get; private set; }
+    public string TagName { get; private set; } = string.Empty;
     public DateTime AddedAt { get; private set; }
 
     public Note Note { get; private set; } = null!;
-    public TagEntity Tag { get; private set; } = null!;
 
     private NoteTag() { }
 
-    public NoteTag(Guid noteId, Guid tagId)
+    public NoteTag(Guid noteId, string tagName)
     {
         NoteId = noteId;
-        TagId = tagId;
+        TagName = ValidateAndNormalizeTagName(tagName);
         AddedAt = DateTime.UtcNow;
+    }
+
+    private static string ValidateAndNormalizeTagName(string tagName)
+    {
+        if (string.IsNullOrWhiteSpace(tagName))
+            throw new ArgumentException("Tag name cannot be empty", nameof(tagName));
+        if (tagName.Length > 50)
+            throw new ArgumentException("Tag name cannot exceed 50 characters", nameof(tagName));
+        
+        return tagName.ToLowerInvariant().Trim();
     }
 }

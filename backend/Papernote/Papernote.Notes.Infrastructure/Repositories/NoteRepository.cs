@@ -5,9 +5,6 @@ using Papernote.Notes.Infrastructure.Persistence;
 
 namespace Papernote.Notes.Infrastructure.Repositories;
 
-/// <summary>
-/// Repository implementation for Notes using Entity Framework and PostgreSQL
-/// </summary>
 public class NoteRepository : INoteRepository
 {
     private readonly NotesDbContext _context;
@@ -20,41 +17,31 @@ public class NoteRepository : INoteRepository
     public async Task<Note?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Notes
-            .Include(n => n.NoteTags)
-                .ThenInclude(nt => nt.Tag)
-            .Include(n => n.NoteShares)
             .FirstOrDefaultAsync(n => n.Id == id, cancellationToken);
     }
 
-    public async Task<IEnumerable<Note>> GetByUserIdAsync(Guid userId, bool includeDeleted = false, CancellationToken cancellationToken = default)
+    public async Task<Note?> GetByIdWithTagsAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var query = _context.Notes
+        return await _context.Notes
             .Include(n => n.NoteTags)
-                .ThenInclude(nt => nt.Tag)
-            .Include(n => n.NoteShares)
-            .AsQueryable();
+            .FirstOrDefaultAsync(n => n.Id == id, cancellationToken);
+    }
 
-        if (includeDeleted)
-        {
-            query = query.IgnoreQueryFilters();
-        }
-
-        return await query
-            .Where(n => n.UserId == userId)
+    public async Task<IEnumerable<Note>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Notes
+            .Include(n => n.NoteTags)
             .OrderByDescending(n => n.UpdatedAt)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<Note>> GetByTagAsync(string tag, Guid userId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Note>> GetByTagAsync(string tag, CancellationToken cancellationToken = default)
     {
         var tagName = tag.ToLowerInvariant();
 
         return await _context.Notes
             .Include(n => n.NoteTags)
-                .ThenInclude(nt => nt.Tag)
-            .Include(n => n.NoteShares)
-            .Where(n => n.UserId == userId)
-            .Where(n => n.NoteTags.Any(nt => nt.Tag.Name == tagName))
+            .Where(n => n.NoteTags.Any(nt => nt.TagName == tagName))
             .OrderByDescending(n => n.UpdatedAt)
             .ToListAsync(cancellationToken);
     }
@@ -89,59 +76,25 @@ public class NoteRepository : INoteRepository
             .AnyAsync(n => n.Id == id, cancellationToken);
     }
 
-    public async Task<int> GetCountByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<int> GetCountAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Notes
-            .CountAsync(n => n.UserId == userId, cancellationToken);
+            .CountAsync(cancellationToken);
     }
 
-    /// <summary>
-    /// Basic text search in user's notes using LIKE operator
-    /// </summary>
-    public async Task<IEnumerable<Note>> SearchAsync(string searchText, Guid userId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Note>> SearchAsync(string searchText, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(searchText))
         {
-            return await GetByUserIdAsync(userId, false, cancellationToken);
+            return await GetAllAsync(cancellationToken);
         }
 
         var searchTerm = $"%{searchText.ToLowerInvariant()}%";
 
         return await _context.Notes
             .Include(n => n.NoteTags)
-                .ThenInclude(nt => nt.Tag)
-            .Include(n => n.NoteShares)
-            .Where(n => n.UserId == userId)
-            .Where(n => EF.Functions.Like(n.Title.ToLower(), searchTerm) || 
+            .Where(n => EF.Functions.Like(n.Title.ToLower(), searchTerm) ||
                        EF.Functions.Like(n.Content.ToLower(), searchTerm))
-            .OrderByDescending(n => n.UpdatedAt)
-            .ToListAsync(cancellationToken);
-    }
-
-    /// <summary>
-    /// Get notes shared with a specific user
-    /// </summary>
-    public async Task<IEnumerable<Note>> GetSharedWithUserAsync(Guid userId, CancellationToken cancellationToken = default)
-    {
-        return await _context.Notes
-            .Include(n => n.NoteTags)
-                .ThenInclude(nt => nt.Tag)
-            .Include(n => n.NoteShares)
-            .Where(n => n.NoteShares.Any(ns => ns.SharedWithUserId == userId && !ns.IsRevoked))
-            .OrderByDescending(n => n.UpdatedAt)
-            .ToListAsync(cancellationToken);
-    }
-
-    /// <summary>
-    /// Get notes shared by a specific user
-    /// </summary>
-    public async Task<IEnumerable<Note>> GetSharedByUserAsync(Guid userId, CancellationToken cancellationToken = default)
-    {
-        return await _context.Notes
-            .Include(n => n.NoteTags)
-                .ThenInclude(nt => nt.Tag)
-            .Include(n => n.NoteShares)
-            .Where(n => n.UserId == userId && n.NoteShares.Any(ns => !ns.IsRevoked))
             .OrderByDescending(n => n.UpdatedAt)
             .ToListAsync(cancellationToken);
     }

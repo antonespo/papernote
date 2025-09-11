@@ -15,15 +15,16 @@ public class NoteTagConfiguration : IEntityTypeConfiguration<NoteTag>
         builder.ToTable("note_tags");
 
         // Composite Primary Key
-        builder.HasKey(nt => new { nt.NoteId, nt.TagId });
+        builder.HasKey(nt => new { nt.NoteId, nt.TagName });
 
         // Foreign Keys
         builder.Property(nt => nt.NoteId)
             .HasColumnName("note_id")
             .IsRequired();
 
-        builder.Property(nt => nt.TagId)
-            .HasColumnName("tag_id")
+        builder.Property(nt => nt.TagName)
+            .HasColumnName("tag_name")
+            .HasMaxLength(50)
             .IsRequired();
 
         // AddedAt timestamp
@@ -31,14 +32,12 @@ public class NoteTagConfiguration : IEntityTypeConfiguration<NoteTag>
             .HasColumnName("added_at")
             .IsRequired();
 
-        // Relationships are configured in Note and TagEntity configurations
-
         // Indexes for performance
         builder.HasIndex(nt => nt.NoteId)
             .HasDatabaseName("ix_note_tags_note_id");
 
-        builder.HasIndex(nt => nt.TagId)
-            .HasDatabaseName("ix_note_tags_tag_id");
+        builder.HasIndex(nt => nt.TagName)
+            .HasDatabaseName("ix_note_tags_tag_name");
 
         builder.HasIndex(nt => nt.AddedAt)
             .HasDatabaseName("ix_note_tags_added_at");

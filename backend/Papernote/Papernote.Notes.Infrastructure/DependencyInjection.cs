@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Papernote.Notes.Core.Application.Interfaces;
 using Papernote.Notes.Core.Domain.Interfaces;
 using Papernote.Notes.Infrastructure.Persistence;
 using Papernote.Notes.Infrastructure.Repositories;
+using Papernote.Notes.Infrastructure.Services;
 using Papernote.SharedMicroservices.Database;
 
 namespace Papernote.Notes.Infrastructure;
@@ -35,6 +37,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<INoteRepository, NoteRepository>();
+        services.AddScoped<INoteService, NoteService>();
 
         return services;
     }

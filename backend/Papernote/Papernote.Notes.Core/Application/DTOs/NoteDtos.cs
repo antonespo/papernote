@@ -22,24 +22,25 @@ public record UpdateNoteDto(
 /// <summary>
 /// DTO for note response
 /// </summary>
-public record NoteDto(
-    Guid Id,
-    string Title,
-    string Content,
-    Guid UserId,
-    DateTime CreatedAt,
-    DateTime UpdatedAt,
-    List<string> Tags
-);
+public class NoteDto
+{
+    public Guid Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public List<string> Tags { get; set; } = new();
+}
 
 /// <summary>
 /// DTO for note summary (for listing)
 /// </summary>
-public record NoteSummaryDto(
-    Guid Id,
-    string Title,
-    string ContentPreview,
-    DateTime CreatedAt,
-    DateTime UpdatedAt,
-    List<string> Tags
-);
+public class NoteSummaryDto
+{
+    public Guid Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string ContentPreview { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public List<string> Tags { get; set; } = new();
+}
