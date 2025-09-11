@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36429.23 d17.14
+VisualStudioVersion = 17.14.36429.23
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papernote.Notes.API", "Papernote.Notes.API\Papernote.Notes.API.csproj", "{4705641D-BE58-4CE4-8D54-90D76A5E980B}"
 EndProject
@@ -9,12 +9,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papernote.Auth.API", "Paper
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papernote.Gateway", "Papernote.Gateway\Papernote.Gateway.csproj", "{E71E217B-2AA1-47DC-B157-164B26CB8E0B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papernote.Shared", "Papernote.Shared\Papernote.Shared.csproj", "{10D033B2-CF55-45EA-8912-FCE7E98537CC}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
-		Directory.Build.props = Directory.Build.props
 	EndProjectSection
 EndProject
 Global
@@ -35,10 +32,6 @@ Global
 		{E71E217B-2AA1-47DC-B157-164B26CB8E0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E71E217B-2AA1-47DC-B157-164B26CB8E0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E71E217B-2AA1-47DC-B157-164B26CB8E0B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{10D033B2-CF55-45EA-8912-FCE7E98537CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{10D033B2-CF55-45EA-8912-FCE7E98537CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{10D033B2-CF55-45EA-8912-FCE7E98537CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{10D033B2-CF55-45EA-8912-FCE7E98537CC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
