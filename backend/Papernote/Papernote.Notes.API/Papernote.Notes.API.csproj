@@ -14,8 +14,8 @@
     <!-- Core packages -->
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.HealthChecks" Version="2.2.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
     
     <!-- Advanced health checks -->
@@ -28,7 +28,7 @@
     <!-- Clean Architecture references -->
     <ProjectReference Include="..\Papernote.Notes.Core\Papernote.Notes.Core.csproj" />
     <ProjectReference Include="..\Papernote.Notes.Infrastructure\Papernote.Notes.Infrastructure.csproj" />
-  <ProjectReference Include="..\Papernote.SharedMicroservices\Papernote.SharedMicroservices.csproj" />
+    <ProjectReference Include="..\Papernote.SharedMicroservices\Papernote.SharedMicroservices.csproj" />
   </ItemGroup>
 
 </Project>
