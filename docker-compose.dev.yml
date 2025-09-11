@@ -1,0 +1,83 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: papernote
+      POSTGRES_USER: papernote_user
+      POSTGRES_PASSWORD: papernote_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  # Auth Service
+  auth-service:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=papernote;Username=papernote_user;Password=papernote_dev_password
+      - Redis__ConnectionString=redis:6379
+      - DOTNET_USE_POLLING_FILE_WATCHER=true
+      - DOTNET_WATCH_RESTART_ON_RUDE_EDIT=true
+    ports:
+      - "5001:8080"
+    volumes:
+      - ./backend/Papernote/Papernote.Auth.API:/app:rw
+    working_dir: /app
+    command: ["dotnet", "watch", "run", "--urls", "http://+:8080"]
+    depends_on:
+      - postgres
+      - redis
+
+  # Notes Service
+  notes-service:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=papernote;Username=papernote_user;Password=papernote_dev_password
+      - Redis__ConnectionString=redis:6379
+      - DOTNET_USE_POLLING_FILE_WATCHER=true
+      - DOTNET_WATCH_RESTART_ON_RUDE_EDIT=true
+    ports:
+      - "5002:8080"
+    volumes:
+      - ./backend/Papernote/Papernote.Notes.API:/app:rw
+    working_dir: /app
+    command: ["dotnet", "watch", "run", "--urls", "http://+:8080"]
+    depends_on:
+      - postgres
+      - redis
+
+  # API Gateway
+  gateway:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - Services__Auth=http://auth-service:8080
+      - Services__Notes=http://notes-service:8080
+      - DOTNET_USE_POLLING_FILE_WATCHER=true
+      - DOTNET_WATCH_RESTART_ON_RUDE_EDIT=true
+    ports:
+      - "5000:8080"
+    volumes:
+      - ./backend/Papernote/Papernote.Gateway:/app:rw
+    working_dir: /app
+    command: ["dotnet", "watch", "run", "--urls", "http://+:8080"]
+    depends_on:
+      - auth-service
+      - notes-service
+
+volumes:
+  postgres_data:

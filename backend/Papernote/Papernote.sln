@@ -1,0 +1,42 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36429.23
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papernote.Notes.API", "Papernote.Notes.API\Papernote.Notes.API.csproj", "{4705641D-BE58-4CE4-8D54-90D76A5E980B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papernote.Auth.API", "Papernote.Auth.API\Papernote.Auth.API.csproj", "{1EC0BA98-438E-43D6-9E9F-EBD07F1731E5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papernote.Gateway", "Papernote.Gateway\Papernote.Gateway.csproj", "{E71E217B-2AA1-47DC-B157-164B26CB8E0B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4705641D-BE58-4CE4-8D54-90D76A5E980B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4705641D-BE58-4CE4-8D54-90D76A5E980B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4705641D-BE58-4CE4-8D54-90D76A5E980B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4705641D-BE58-4CE4-8D54-90D76A5E980B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1EC0BA98-438E-43D6-9E9F-EBD07F1731E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1EC0BA98-438E-43D6-9E9F-EBD07F1731E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1EC0BA98-438E-43D6-9E9F-EBD07F1731E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1EC0BA98-438E-43D6-9E9F-EBD07F1731E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E71E217B-2AA1-47DC-B157-164B26CB8E0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E71E217B-2AA1-47DC-B157-164B26CB8E0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E71E217B-2AA1-47DC-B157-164B26CB8E0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E71E217B-2AA1-47DC-B157-164B26CB8E0B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CA67B3FD-25DA-4EA3-9414-6848C66404B1}
+	EndGlobalSection
+EndGlobal
