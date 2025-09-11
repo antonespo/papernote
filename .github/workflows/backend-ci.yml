@@ -80,6 +80,9 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Restore dependencies
+        run: dotnet restore backend/Papernote/Papernote.sln
+
       - name: Run security scan
         run: dotnet list backend/Papernote package --vulnerable --include-transitive
 
