@@ -52,3 +52,67 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# .NET build
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# VS Code
+.vscode/
+
+# Rider
+.idea/
+*.sln.iml
+
+# Visual Studio
+.vs/
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+
+# Npm/Node (per progetti fullstack)
+node_modules/
+
+# Docker
+*.container
+*.dockerfile
+Dockerfile*
+.dockerignore
+
+# Logs
+*.log
+logs/
+
+# User secrets
+secrets.json
+
+# OS generated files
+[Tt]humbs.db
+[Dd]esktop.ini
+*.DS_Store
+
+# Test results
+TestResults/
+
+# Others
+*.swp
+*.bak
+*.tmp
+
+# NuGet
+*.nupkg
+.nuget/
+
+# Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+# Local tools
+.tools/
