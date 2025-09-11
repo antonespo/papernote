@@ -3,11 +3,19 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36429.23 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papernote.Notes.API", "Papernote.Notes.API\Papernote.Notes.API.csproj", "{586894B9-6D7D-4BBD-8C29-419CC3E13A5A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papernote.Notes.API", "Papernote.Notes.API\Papernote.Notes.API.csproj", "{4705641D-BE58-4CE4-8D54-90D76A5E980B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papernote.Auth.API", "Papernote.Auth.API\Papernote.Auth.API.csproj", "{54EFD6C6-FE1A-41C3-B0F2-3171AA69C919}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papernote.Auth.API", "Papernote.Auth.API\Papernote.Auth.API.csproj", "{1EC0BA98-438E-43D6-9E9F-EBD07F1731E5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papernote.Gateway", "Papernote.Gateway\Papernote.Gateway.csproj", "{01F5FB2C-06C9-4F52-8D25-BA4F401F48DC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papernote.Gateway", "Papernote.Gateway\Papernote.Gateway.csproj", "{E71E217B-2AA1-47DC-B157-164B26CB8E0B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Papernote.Shared", "Papernote.Shared\Papernote.Shared.csproj", "{10D033B2-CF55-45EA-8912-FCE7E98537CC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		Directory.Build.props = Directory.Build.props
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,23 +23,27 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{586894B9-6D7D-4BBD-8C29-419CC3E13A5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{586894B9-6D7D-4BBD-8C29-419CC3E13A5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{586894B9-6D7D-4BBD-8C29-419CC3E13A5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{586894B9-6D7D-4BBD-8C29-419CC3E13A5A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{54EFD6C6-FE1A-41C3-B0F2-3171AA69C919}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{54EFD6C6-FE1A-41C3-B0F2-3171AA69C919}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{54EFD6C6-FE1A-41C3-B0F2-3171AA69C919}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{54EFD6C6-FE1A-41C3-B0F2-3171AA69C919}.Release|Any CPU.Build.0 = Release|Any CPU
-		{01F5FB2C-06C9-4F52-8D25-BA4F401F48DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{01F5FB2C-06C9-4F52-8D25-BA4F401F48DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{01F5FB2C-06C9-4F52-8D25-BA4F401F48DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{01F5FB2C-06C9-4F52-8D25-BA4F401F48DC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4705641D-BE58-4CE4-8D54-90D76A5E980B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4705641D-BE58-4CE4-8D54-90D76A5E980B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4705641D-BE58-4CE4-8D54-90D76A5E980B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4705641D-BE58-4CE4-8D54-90D76A5E980B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1EC0BA98-438E-43D6-9E9F-EBD07F1731E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1EC0BA98-438E-43D6-9E9F-EBD07F1731E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1EC0BA98-438E-43D6-9E9F-EBD07F1731E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1EC0BA98-438E-43D6-9E9F-EBD07F1731E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E71E217B-2AA1-47DC-B157-164B26CB8E0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E71E217B-2AA1-47DC-B157-164B26CB8E0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E71E217B-2AA1-47DC-B157-164B26CB8E0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E71E217B-2AA1-47DC-B157-164B26CB8E0B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10D033B2-CF55-45EA-8912-FCE7E98537CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10D033B2-CF55-45EA-8912-FCE7E98537CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10D033B2-CF55-45EA-8912-FCE7E98537CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10D033B2-CF55-45EA-8912-FCE7E98537CC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {CD8B642D-3854-4DA9-BD1B-DA709063033C}
+		SolutionGuid = {CA67B3FD-25DA-4EA3-9414-6848C66404B1}
 	EndGlobalSection
 EndGlobal

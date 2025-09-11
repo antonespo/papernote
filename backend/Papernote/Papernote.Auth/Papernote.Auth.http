@@ -1,0 +1,6 @@
+@Papernote.Auth_HostAddress = http://localhost:5104
+
+GET {{Papernote.Auth_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
