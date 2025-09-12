@@ -11,9 +11,16 @@ services:
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__AuthDatabase=Host=postgres;Port=5432;Database=papernote_auth_test;Username=papernote_test;Password=test_password
       - ConnectionStrings__Redis=redis:6379
-      - Jwt__SecretKey=ci-test-secret-key-for-testing-only-not-production
-      - Jwt__Issuer=papernote-ci
-      - Jwt__Audience=papernote-api-ci
+      - Auth__JwtSettings__SigningKey=ci-test-secret-key-for-testing-only-not-production
+      - Auth__JwtSettings__Issuer=papernote-ci
+      - Auth__JwtSettings__Audience=papernote-api-ci
+      - Auth__JwtSettings__AccessTokenLifetime=00:15:00
+      - Auth__JwtSettings__RefreshTokenLifetime=7.00:00:00
+      - Auth__PasswordSettings__RequiredLength=8
+      - Auth__PasswordSettings__RequireDigit=true
+      - Auth__PasswordSettings__RequireUppercase=true
+      - Auth__PasswordSettings__RequireLowercase=true
+      - Auth__PasswordSettings__RequireNonAlphanumeric=false
     ports:
       - "5001:8080"
     depends_on:
