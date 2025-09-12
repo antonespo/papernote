@@ -15,7 +15,7 @@ public static class CacheServiceExtensions
         services.AddRedisCache(configuration);
 
         services.AddScoped<ICacheService, RedisCacheService>();
-        services.AddScoped<ICacheKeyStrategy, NotesCacheKeyStrategy>();
+        services.AddScoped<INotesCacheKeyStrategy, NotesCacheKeyStrategy>();
 
         return services;
     }

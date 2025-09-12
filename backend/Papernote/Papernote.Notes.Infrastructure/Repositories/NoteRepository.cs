@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NpgsqlTypes;
+using Papernote.Notes.Core.Application.DTOs;
 using Papernote.Notes.Core.Domain.Entities;
 using Papernote.Notes.Core.Domain.Interfaces;
 using Papernote.Notes.Infrastructure.Persistence;
@@ -28,12 +29,67 @@ public class NoteRepository : INoteRepository
             .FirstOrDefaultAsync(n => n.Id == id, cancellationToken);
     }
 
+    public async Task<Note?> GetByIdWithTagsAndSharesAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Notes
+            .Include(n => n.NoteTags)
+            .Include(n => n.NoteShares)
+            .FirstOrDefaultAsync(n => n.Id == id, cancellationToken);
+    }
+
     public async Task<IEnumerable<Note>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Notes
             .Include(n => n.NoteTags)
+            .Include(n => n.NoteShares)
             .AsNoTracking()
             .OrderByDescending(n => n.UpdatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<Note>> GetNotesAsync(GetNotesDto request, Guid userId, CancellationToken cancellationToken = default)
+    {
+        var query = _context.Notes.AsNoTracking();
+
+        query = request.Filter switch
+        {
+            NoteFilter.Owned => query.Where(n => n.OwnerUserId == userId),
+            NoteFilter.Shared => query.Where(n => n.NoteShares.Any(ns => ns.ReaderUserId == userId)),
+            _ => throw new ArgumentOutOfRangeException(nameof(request.Filter), "Invalid filter value")
+        };
+
+        if (request.IsSearch)
+        {
+            if (request.SearchTags is { Count: > 0 })
+            {
+                var normalizedTags = request.SearchTags.Select(t => t.ToLowerInvariant()).ToList();
+                query = query.Where(n => n.NoteTags.Any(nt => normalizedTags.Contains(nt.TagName)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.SearchText))
+            {
+                var trimmedSearchText = request.SearchText.Trim();
+
+                query = query
+                    .Where(n => EF.Property<NpgsqlTsVector>(n, "SearchVector")
+                        .Matches(EF.Functions.WebSearchToTsQuery("italian", trimmedSearchText)))
+                    .OrderByDescending(n => EF.Property<NpgsqlTsVector>(n, "SearchVector")
+                        .RankCoverDensity(EF.Functions.WebSearchToTsQuery("italian", trimmedSearchText)))
+                    .ThenByDescending(n => n.UpdatedAt);
+            }
+            else
+            {
+                query = query.OrderByDescending(n => n.UpdatedAt);
+            }
+        }
+        else
+        {
+            query = query.OrderByDescending(n => n.UpdatedAt);
+        }
+
+        return await query
+            .Include(n => n.NoteTags)
+            .Include(n => n.NoteShares)
             .ToListAsync(cancellationToken);
     }
 
@@ -67,31 +123,26 @@ public class NoteRepository : INoteRepository
             .AnyAsync(n => n.Id == id, cancellationToken);
     }
 
-    public async Task<IEnumerable<Note>> SearchNotesAsync(string? searchText, List<string>? tags, CancellationToken ct = default)
+    public async Task<bool> CanUserReadNoteAsync(Guid noteId, Guid userId, CancellationToken cancellationToken = default)
     {
-        var q = _context.Notes.AsNoTracking().AsQueryable();
+        return await _context.Notes
+            .AnyAsync(n => n.Id == noteId &&
+                          (n.OwnerUserId == userId || n.NoteShares.Any(ns => ns.ReaderUserId == userId)),
+                      cancellationToken);
+    }
 
-        if (tags is { Count: > 0 })
-        {
-            var normalized = tags.Select(t => t.ToLowerInvariant()).ToList();
-            q = q.Where(n => n.NoteTags.Any(nt => normalized.Contains(nt.TagName)));
-        }
+    public async Task<bool> CanUserWriteNoteAsync(Guid noteId, Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Notes
+            .AnyAsync(n => n.Id == noteId && n.OwnerUserId == userId, cancellationToken);
+    }
 
-        if (!string.IsNullOrWhiteSpace(searchText))
-        {
-            var trimmedSearchText = searchText.Trim();
-            
-            q = q.Where(n => EF.Property<NpgsqlTsVector>(n, "SearchVector").Matches(EF.Functions.WebSearchToTsQuery("italian", trimmedSearchText)))
-                 .OrderByDescending(n => EF.Property<NpgsqlTsVector>(n, "SearchVector").RankCoverDensity(EF.Functions.WebSearchToTsQuery("italian", trimmedSearchText)))
-                 .ThenByDescending(n => n.UpdatedAt);
-        }
-        else
-        {
-            q = q.OrderByDescending(n => n.UpdatedAt);
-        }
-
-        q = q.Include(n => n.NoteTags);
-
-        return await q.ToListAsync(ct);
+    public async Task<IEnumerable<NoteShare>> GetNoteSharesAsync(Guid noteId, CancellationToken cancellationToken = default)
+    {
+        return await _context.NoteShares
+            .Where(ns => ns.NoteId == noteId)
+            .AsNoTracking()
+            .OrderBy(ns => ns.SharedAt)
+            .ToListAsync(cancellationToken);
     }
 }

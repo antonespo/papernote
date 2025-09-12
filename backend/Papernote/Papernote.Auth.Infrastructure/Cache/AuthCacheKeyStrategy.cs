@@ -1,8 +1,9 @@
+using Papernote.Auth.Core.Application.Interfaces;
 using Papernote.SharedMicroservices.Cache;
 
 namespace Papernote.Auth.Infrastructure.Cache;
 
-public class AuthCacheKeyStrategy : IAdvancedCacheKeyStrategy
+public class AuthCacheKeyStrategy : IAuthCacheKeyStrategy, IAdvancedCacheKeyStrategy
 {
     public string ServicePrefix => "auth";
     public string Version => "v1";
@@ -14,7 +15,7 @@ public class AuthCacheKeyStrategy : IAdvancedCacheKeyStrategy
         => GetVersionedKey("users", "userid", userId.ToString());
 
     public string GetUserResolutionPatternKey()
-        => GetPatternKey("users");
+        => GetPatternKey("users", "*");
 
     public string GetRateLimitKey(string username)
         => GetVersionedKey("ratelimit", "login", username.ToLowerInvariant());

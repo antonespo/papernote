@@ -1,3 +1,4 @@
+using Papernote.Notes.Core.Application.DTOs;
 using Papernote.Notes.Core.Application.Interfaces;
 using Papernote.SharedMicroservices.Cache;
 using System.Security.Cryptography;
@@ -6,18 +7,22 @@ using System.Text.Json;
 
 namespace Papernote.Notes.Infrastructure.Services;
 
-public class NotesCacheKeyStrategy : ICacheKeyStrategy, IAdvancedCacheKeyStrategy
+public class NotesCacheKeyStrategy : INotesCacheKeyStrategy, IAdvancedCacheKeyStrategy
 {
     public string ServicePrefix => "notes";
     public string Version => "v1";
 
-    public string GetNoteKey(Guid noteId)
-        => GetVersionedKey("note", "id", noteId.ToString());
+    public string GetUserNoteKey(Guid userId, Guid noteId)
+        => GetVersionedKey("user", userId.ToString(), "note", noteId.ToString());
 
-    public string GetSearchKey(string? searchText, IEnumerable<string>? tags)
+    public string GetUserNotesListKey(Guid userId, NoteFilter filter)
+        => GetVersionedKey("user", userId.ToString(), "list", filter.ToString().ToLowerInvariant());
+
+    public string GetUserSearchKey(Guid userId, NoteFilter filter, string? searchText, IEnumerable<string>? tags)
     {
         var searchQuery = new
         {
+            Filter = filter.ToString().ToLowerInvariant(),
             Text = searchText?.Trim().ToLowerInvariant(),
             Tags = tags?.Select(t => t.ToLowerInvariant()).OrderBy(t => t).ToArray()
         };
@@ -25,23 +30,20 @@ public class NotesCacheKeyStrategy : ICacheKeyStrategy, IAdvancedCacheKeyStrateg
         var json = JsonSerializer.Serialize(searchQuery);
         var hash = GenerateHash(json);
 
-        return GetVersionedKey("search", hash);
+        return GetVersionedKey("user", userId.ToString(), "search", hash);
     }
 
-    public string GetNotesListKey()
-        => GetVersionedKey("list", "all");
+    public string GetAllUserCachePattern(Guid userId)
+        => GetPatternKey("user", userId.ToString() + ":*");
 
-    public string GetAllNotesCachePattern()
-        => GetPatternKey("*");
+    public string GetSearchPatternKey()
+        => GetPatternKey("user", "*:search:*");
 
     public string GetPatternKey(string operation, string wildcard = "*")
         => $"{ServicePrefix}:{Version}:{operation}:{wildcard}";
 
     public string GetVersionedKey(string operation, params string[] segments)
         => $"{ServicePrefix}:{Version}:{operation}:{string.Join(":", segments)}";
-
-    public string GetSearchPatternKey()
-        => GetPatternKey("search");
 
     private static string GenerateHash(string input)
     {
