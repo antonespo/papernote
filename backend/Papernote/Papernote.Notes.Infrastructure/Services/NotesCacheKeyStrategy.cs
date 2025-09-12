@@ -1,21 +1,18 @@
 using Papernote.Notes.Core.Application.Interfaces;
+using Papernote.SharedMicroservices.Cache;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
 namespace Papernote.Notes.Infrastructure.Services;
 
-public class NotesCacheKeyStrategy : ICacheKeyStrategy
+public class NotesCacheKeyStrategy : ICacheKeyStrategy, IAdvancedCacheKeyStrategy
 {
-    private const string NOTE_PREFIX = "notes";
-    private const string ID_NAMESPACE = "id";
-    private const string SEARCH_NAMESPACE = "search";
-    private const string LIST_NAMESPACE = "list";
+    public string ServicePrefix => "notes";
+    public string Version => "v1";
 
     public string GetNoteKey(Guid noteId)
-    {
-        return $"{NOTE_PREFIX}:{ID_NAMESPACE}:{noteId}";
-    }
+        => GetVersionedKey("note", "id", noteId.ToString());
 
     public string GetSearchKey(string? searchText, IEnumerable<string>? tags)
     {
@@ -27,19 +24,24 @@ public class NotesCacheKeyStrategy : ICacheKeyStrategy
 
         var json = JsonSerializer.Serialize(searchQuery);
         var hash = GenerateHash(json);
-        
-        return $"{NOTE_PREFIX}:{SEARCH_NAMESPACE}:{hash}";
+
+        return GetVersionedKey("search", hash);
     }
 
     public string GetNotesListKey()
-    {
-        return $"{NOTE_PREFIX}:{LIST_NAMESPACE}";
-    }
+        => GetVersionedKey("list", "all");
 
     public string GetAllNotesCachePattern()
-    {
-        return $"{NOTE_PREFIX}:*";
-    }
+        => GetPatternKey("*");
+
+    public string GetPatternKey(string operation, string wildcard = "*")
+        => $"{ServicePrefix}:{Version}:{operation}:{wildcard}";
+
+    public string GetVersionedKey(string operation, params string[] segments)
+        => $"{ServicePrefix}:{Version}:{operation}:{string.Join(":", segments)}";
+
+    public string GetSearchPatternKey()
+        => GetPatternKey("search");
 
     private static string GenerateHash(string input)
     {
