@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Papernote.Notes.Infrastructure;
+using Papernote.Notes.Infrastructure.Extensions;
 using Papernote.Notes.Core.Application.Mappings;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,7 +14,12 @@ builder.Services.AddAutoMapper(cfg => cfg.AddProfile<NoteMappingProfile>());
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
 builder.Services.AddNotesInfrastructure(connectionString);
+
+builder.Services.AddCacheServices(builder.Configuration);
+
+builder.Services.AddCachedNoteService();
 
 builder.Services.AddHealthChecks()
     .AddCheck("self", () => HealthCheckResult.Healthy("Notes API is running"));

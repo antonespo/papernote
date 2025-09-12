@@ -33,6 +33,10 @@
     
     <!-- Redis for cache -->
     <PackageReference Include="StackExchange.Redis" Version="2.8.16" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="8.0.11" />
+    
+    <!-- Decorator pattern support -->
+    <PackageReference Include="Scrutor" Version="5.0.1" />
   </ItemGroup>
 
 </Project>
