@@ -6,10 +6,26 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>a096d89d-966f-4701-a9f1-8fcbc3095657</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Core packages -->
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.HealthChecks" Version="2.2.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
+    
+    <!-- Gateway specific packages -->
+    <PackageReference Include="Yarp.ReverseProxy" Version="2.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Gateway only needs Shared for JWT and Redis -->
+  <ProjectReference Include="..\Papernote.SharedMicroservices\Papernote.SharedMicroservices.csproj" />
   </ItemGroup>
 
 </Project>

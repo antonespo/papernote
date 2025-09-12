@@ -1,4 +1,7 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Papernote.Notes.Infrastructure;
+using Papernote.Notes.Infrastructure.Extensions;
+using Papernote.Notes.Core.Application.Mappings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,6 +9,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddAutoMapper(cfg => cfg.AddProfile<NoteMappingProfile>());
+
+var connectionString = builder.Configuration.GetConnectionString("NotesDatabase")
+    ?? throw new InvalidOperationException("Connection string 'NotesDatabase' not found in configuration.");
+
+builder.Services.AddNotesInfrastructure(connectionString);
+
+builder.Services.AddCacheServices(builder.Configuration);
+
+builder.Services.AddCachedNoteService();
 
 builder.Services.AddHealthChecks()
     .AddCheck("self", () => HealthCheckResult.Healthy("Notes API is running"));

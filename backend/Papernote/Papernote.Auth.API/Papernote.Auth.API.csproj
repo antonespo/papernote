@@ -6,11 +6,29 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>75813487-f64c-4044-810d-2c7e5daeb674</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
+    <!-- Core packages -->
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.HealthChecks" Version="2.2.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
+    
+    <!-- Advanced health checks -->
+    <PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="8.0.1" />
+    <PackageReference Include="AspNetCore.HealthChecks.Redis" Version="8.0.1" />
+    <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Clean Architecture references -->
+    <ProjectReference Include="..\Papernote.Auth.Core\Papernote.Auth.Core.csproj" />
+    <ProjectReference Include="..\Papernote.Auth.Infrastructure\Papernote.Auth.Infrastructure.csproj" />
+  <ProjectReference Include="..\Papernote.SharedMicroservices\Papernote.SharedMicroservices.csproj" />
   </ItemGroup>
 
 </Project>
