@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Papernote.Notes.Core.Application.Mappings;
 using Papernote.Notes.Infrastructure;
 using Papernote.Notes.Infrastructure.Extensions;
+using Papernote.Notes.Infrastructure.Middleware;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -96,6 +97,7 @@ app.MapHealthChecks("/health");
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
+app.UseTokenBlacklist();
 app.UseAuthorization();
 
 app.MapControllers();

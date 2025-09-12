@@ -86,4 +86,30 @@ public class JwtTokenService : IJwtTokenService
             return false;
         }
     }
+
+    public string? ExtractJtiFromToken(string token)
+    {
+        try
+        {
+            var jsonToken = _tokenHandler.ReadJwtToken(token);
+            return jsonToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public DateTime? GetTokenExpiration(string token)
+    {
+        try
+        {
+            var jsonToken = _tokenHandler.ReadJwtToken(token);
+            return jsonToken.ValidTo;
+        }
+        catch
+        {
+            return null;
+        }
+    }
 }

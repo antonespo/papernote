@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Papernote.Auth.API.Extensions;
 using Papernote.Auth.Core.Application.DTOs;
 using Papernote.Auth.Core.Application.Interfaces;
 using Papernote.Auth.Infrastructure.Attributes;
 using Papernote.SharedMicroservices.Results;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Papernote.Auth.API.Controllers;
 
@@ -82,30 +84,25 @@ public class AuthController : ApiControllerBase
     }
 
     [HttpPost("logout")]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> Logout([FromBody] LogoutDto request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
-        var validationError = this.ValidateModelState();
-        if (validationError != null)
-            return validationError.ToActionResult();
+        var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        if (!Guid.TryParse(userIdClaim, out var userId))
+        {
+            return ResultBuilder.BadRequest("Invalid user ID in token").ToActionResult();
+        }
 
-        var result = await _authService.LogoutAsync(request.UserId, cancellationToken);
-        return result.ToActionResult();
-    }
+        var accessToken = HttpContext.Request.Headers.Authorization.FirstOrDefault()?.Replace("Bearer ", "");
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return ResultBuilder.BadRequest("Access token is required").ToActionResult();
+        }
 
-    [HttpPost("revoke-all")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> RevokeAllTokens([FromBody] RevokeAllTokensDto request, CancellationToken cancellationToken)
-    {
-        var validationError = this.ValidateModelState();
-        if (validationError != null)
-            return validationError.ToActionResult();
-
-        var result = await _authService.RevokeAllTokensAsync(request.UserId, cancellationToken);
+        var result = await _authService.LogoutAsync(userId, accessToken, cancellationToken);
         return result.ToActionResult();
     }
 }

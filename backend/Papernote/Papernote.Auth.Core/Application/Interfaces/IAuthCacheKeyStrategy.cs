@@ -6,4 +6,5 @@ public interface IAuthCacheKeyStrategy
     string GetUserIdResolutionKey(Guid userId);
     string GetUserResolutionPatternKey();
     string GetRateLimitKey(string username);
+    string GetRevokedTokenKey(string jti);
 }
