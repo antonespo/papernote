@@ -12,8 +12,8 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<NoteMappingProfile>());
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+var connectionString = builder.Configuration.GetConnectionString("NotesDatabase")
+    ?? throw new InvalidOperationException("Connection string 'NotesDatabase' not found in configuration.");
 
 builder.Services.AddNotesInfrastructure(connectionString);
 

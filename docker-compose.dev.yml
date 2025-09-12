@@ -12,12 +12,22 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U papernote_user -d papernote"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Redis Cache
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Auth Service
   auth-service:
@@ -25,10 +35,12 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=papernote;Username=papernote_user;Password=papernote_dev_password
-      - Redis__ConnectionString=redis:6379
       - DOTNET_USE_POLLING_FILE_WATCHER=true
       - DOTNET_WATCH_RESTART_ON_RUDE_EDIT=true
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      # Docker service-to-service communication
+      - ConnectionStrings__AuthDatabase=Host=postgres;Port=5432;Database=papernote_auth;Username=papernote_user;Password=papernote_auth_dev_password
+      - ConnectionStrings__Redis=redis:6379
     ports:
       - "5001:8080"
     volumes:
@@ -36,8 +48,10 @@ services:
     working_dir: /src/Papernote.Auth.API
     command: ["dotnet", "watch", "run", "--urls", "http://+:8080"]
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   # Notes Service
   notes-service:
@@ -45,10 +59,12 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=papernote;Username=papernote_user;Password=papernote_dev_password
-      - Redis__ConnectionString=redis:6379
+      - DOTNET_RUNNING_IN_CONTAINER=true
       - DOTNET_USE_POLLING_FILE_WATCHER=true
       - DOTNET_WATCH_RESTART_ON_RUDE_EDIT=true
+      # Docker service-to-service communication
+      - ConnectionStrings__NotesDatabase=Host=postgres;Port=5432;Database=papernote;Username=papernote_user;Password=papernote_dev_password
+      - ConnectionStrings__Redis=redis:6379
     ports:
       - "5002:8080"
     volumes:
@@ -56,8 +72,10 @@ services:
     working_dir: /src/Papernote.Notes.API
     command: ["dotnet", "watch", "run", "--urls", "http://+:8080"]
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   # API Gateway
   gateway:
@@ -65,10 +83,13 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - Services__Auth=http://auth-service:8080
-      - Services__Notes=http://notes-service:8080
       - DOTNET_USE_POLLING_FILE_WATCHER=true
       - DOTNET_WATCH_RESTART_ON_RUDE_EDIT=true
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      # Docker service-to-service communication
+      - ConnectionStrings__Redis=redis:6379
+      - Services__Auth=http://auth-service:8080
+      - Services__Notes=http://notes-service:8080
     ports:
       - "5000:8080"
     volumes:
@@ -76,8 +97,10 @@ services:
     working_dir: /src/Papernote.Gateway
     command: ["dotnet", "watch", "run", "--urls", "http://+:8080"]
     depends_on:
-      - auth-service
-      - notes-service
+      auth-service:
+        condition: service_started
+      notes-service:
+        condition: service_started
 
 volumes:
   postgres_data:

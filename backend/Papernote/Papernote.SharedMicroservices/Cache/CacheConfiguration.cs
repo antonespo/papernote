@@ -13,7 +13,7 @@ public static class CacheConfiguration
     /// Configure Redis distributed cache
     /// </summary>
     public static IServiceCollection AddRedisCache(
-        this IServiceCollection services, 
+        this IServiceCollection services,
         IConfiguration configuration)
     {
         var connectionString = ValidateRedisConnectionString(
@@ -24,19 +24,6 @@ public static class CacheConfiguration
         {
             options.Configuration = connectionString;
             options.InstanceName = "PaperNote";
-            
-            // Connection pool settings
-            options.ConfigurationOptions = new StackExchange.Redis.ConfigurationOptions
-            {
-                EndPoints = { connectionString },
-                AbortOnConnectFail = false,
-                ConnectRetry = 3,
-                ConnectTimeout = 5000,
-                SyncTimeout = 5000,
-                AsyncTimeout = 5000,
-                KeepAlive = 180,
-                DefaultDatabase = 0
-            };
         });
 
         return services;

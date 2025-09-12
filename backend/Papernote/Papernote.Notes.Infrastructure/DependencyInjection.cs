@@ -19,7 +19,7 @@ public static class DependencyInjection
         string connectionString)
     {
         var validatedConnectionString = DatabaseConfiguration.ValidateConnectionString(
-            connectionString, "Notes Service");
+            connectionString, "NotesDatabase", "Notes Service");
 
         services.AddDbContext<NotesDbContext>(options =>
         {

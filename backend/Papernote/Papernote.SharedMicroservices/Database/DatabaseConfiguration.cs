@@ -29,13 +29,13 @@ public static class DatabaseConfiguration
     }
 
     /// <summary>
-    /// Standard connection string validation
+    /// Standard connection string validation with specific connection string name
     /// </summary>
-    public static string ValidateConnectionString(string? connectionString, string serviceName)
+    public static string ValidateConnectionString(string? connectionString, string connectionStringName, string serviceName)
     {
         return connectionString
             ?? throw new InvalidOperationException(
-                $"Connection string 'DefaultConnection' not found for {serviceName}. " +
+                $"Connection string '{connectionStringName}' not found for {serviceName}. " +
                 "Please configure it in appsettings.json or environment variables.");
     }
 }

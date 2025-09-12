@@ -21,9 +21,12 @@ public static class CacheServiceExtensions
 
         services.AddSingleton<IConnectionMultiplexer>(provider =>
         {
-            var configuration = ConfigurationOptions.Parse(redisConnectionString);
-            configuration.AbortOnConnectFail = false;
-            return ConnectionMultiplexer.Connect(configuration);
+            var configOptions = ConfigurationOptions.Parse(redisConnectionString);
+            configOptions.AbortOnConnectFail = false;
+            configOptions.ConnectRetry = 3;
+            configOptions.ConnectTimeout = 5000;
+            configOptions.SyncTimeout = 5000;
+            return ConnectionMultiplexer.Connect(configOptions);
         });
 
         services.AddScoped<IBaseCacheService, BaseCacheService>();
@@ -37,7 +40,7 @@ public static class CacheServiceExtensions
     public static IServiceCollection AddCachedNoteService(this IServiceCollection services)
     {
         services.Decorate<INoteService, CachedNoteService>();
-        services.AddScoped<ICachedNoteService>(provider => 
+        services.AddScoped<ICachedNoteService>(provider =>
             (CachedNoteService)provider.GetRequiredService<INoteService>());
 
         return services;

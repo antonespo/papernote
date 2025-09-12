@@ -20,11 +20,14 @@ public class NotesDbContextFactory : IDesignTimeDbContextFactory<NotesDbContext>
             .AddJsonFile("appsettings.json", optional: true)
             .AddJsonFile("appsettings.Development.json", optional: true)
             .AddEnvironmentVariables()
-            .AddUserSecrets<NotesDbContext>(optional: true)
+            .AddUserSecrets(typeof(NotesDbContextFactory).Assembly, optional: true)
             .Build();
 
-        var connectionString = DatabaseConfiguration.ValidateConnectionString(
-            configuration.GetConnectionString("DefaultConnection"),
+        var connectionString = configuration.GetConnectionString("NotesDatabase");
+
+        connectionString = DatabaseConfiguration.ValidateConnectionString(
+            connectionString,
+            "NotesDatabase",
             "Notes Migration");
 
         DatabaseConfiguration.ConfigurePostgreSQL<NotesDbContext>(optionsBuilder, connectionString);
