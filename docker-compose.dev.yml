@@ -42,7 +42,7 @@ services:
       - ConnectionStrings__AuthDatabase=Host=postgres;Port=5432;Database=papernote_auth;Username=papernote_user;Password=papernote_dev_password
       - ConnectionStrings__Redis=redis:6379
       # JWT Configuration for Docker
-      - Auth__JwtSettings__SigningKey=docker-development-jwt-key-not-for-production-use-only
+      - Auth__JwtSettings__SigningKey=thC8kAUUdPjJPi0UMqT5QaBtfDshN5fbQYH+oCJErlVWpknd3fkRXwLInLAeIlpPL0MEMzQbg7M2ZDTuMNHC+w==
       - Auth__JwtSettings__Issuer=papernote-auth
       - Auth__JwtSettings__Audience=papernote-api
       - Auth__JwtSettings__AccessTokenLifetime=00:15:00
@@ -58,7 +58,7 @@ services:
     volumes:
       - ./backend/Papernote:/src:rw
     working_dir: /src/Papernote.Auth.API
-    command: ["dotnet", "watch", "run", "--urls", "http://+:8080"]
+    command: ["dotnet", "run", "--urls", "http://+:8080"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -77,12 +77,15 @@ services:
       # Docker service-to-service communication
       - ConnectionStrings__NotesDatabase=Host=postgres;Port=5432;Database=papernote;Username=papernote_user;Password=papernote_dev_password
       - ConnectionStrings__Redis=redis:6379
+      - Jwt__SigningKey=thC8kAUUdPjJPi0UMqT5QaBtfDshN5fbQYH+oCJErlVWpknd3fkRXwLInLAeIlpPL0MEMzQbg7M2ZDTuMNHC+w==
+      - AuthService__ApiKey=notes-service-secure-api-key-dev-xxxxxxxxxxxxxxx
+      - AuthService__BaseUrl=http://auth-service:8080
     ports:
       - "5004:8080"
     volumes:
       - ./backend/Papernote:/src:rw
     working_dir: /src/Papernote.Notes.API
-    command: ["dotnet", "watch", "run", "--urls", "http://+:8080"]
+    command: ["dotnet", "run", "--urls", "http://+:8080"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -107,7 +110,7 @@ services:
     volumes:
       - ./backend/Papernote:/src:rw
     working_dir: /src/Papernote.Gateway
-    command: ["dotnet", "watch", "run", "--urls", "http://+:8080"]
+    command: ["dotnet", "run", "--urls", "http://+:8080"]
     depends_on:
       auth-service:
         condition: service_started
