@@ -42,7 +42,7 @@ services:
       - ConnectionStrings__AuthDatabase=Host=postgres;Port=5432;Database=papernote_auth;Username=papernote_user;Password=papernote_dev_password
       - ConnectionStrings__Redis=redis:6379
       # JWT Configuration for Docker
-      - Auth__JwtSettings__SigningKey=thC8kAUUdPjJPi0UMqT5QaBtfDshN5fbQYH+oCJErlVWpknd3fkRXwLInLAeIlpPL0MEMzQbg7M2ZDTuMNHC+w==
+      - Auth__JwtSettings__SigningKey=docker-development-jwt-key-not-for-production-use-only
       - Auth__JwtSettings__Issuer=papernote-auth
       - Auth__JwtSettings__Audience=papernote-api
       - Auth__JwtSettings__AccessTokenLifetime=00:15:00
@@ -77,7 +77,7 @@ services:
       # Docker service-to-service communication
       - ConnectionStrings__NotesDatabase=Host=postgres;Port=5432;Database=papernote;Username=papernote_user;Password=papernote_dev_password
       - ConnectionStrings__Redis=redis:6379
-      - Jwt__SigningKey=thC8kAUUdPjJPi0UMqT5QaBtfDshN5fbQYH+oCJErlVWpknd3fkRXwLInLAeIlpPL0MEMzQbg7M2ZDTuMNHC+w==
+      - Jwt__SigningKey=docker-development-jwt-key-not-for-production-use-only
       - AuthService__ApiKey=notes-service-secure-api-key-dev-xxxxxxxxxxxxxxx
       - AuthService__BaseUrl=http://auth-service:8080
     ports:
