@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Papernote.Auth.Core.Application.Interfaces;
 using Papernote.Auth.Core.Domain.Interfaces;
+using Papernote.Auth.Infrastructure.Attributes;
+using Papernote.Auth.Infrastructure.Cache;
+using Papernote.Auth.Infrastructure.Extensions;
 using Papernote.Auth.Infrastructure.Persistence;
 using Papernote.Auth.Infrastructure.Repositories;
 using Papernote.Auth.Infrastructure.Security;
@@ -50,6 +52,14 @@ public static class DependencyInjection
         // Application services
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserResolutionService, UserResolutionService>();
+        services.AddScoped<IRateLimitService, RateLimitService>();
+
+        // Cache services
+        services.AddSingleton<AuthCacheKeyStrategy>();
+        services.AddScoped<AuthCacheService>();
+
+        // Rate limiting (attribute-based)
+        services.AddScoped<RateLimitActionFilter>();
 
         return services;
     }

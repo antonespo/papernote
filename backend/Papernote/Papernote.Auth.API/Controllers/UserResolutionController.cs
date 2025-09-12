@@ -1,23 +1,26 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Papernote.Auth.Core.Application.DTOs;
 using Papernote.Auth.Core.Application.Interfaces;
+using Papernote.Auth.API.Extensions;
 using Papernote.SharedMicroservices.Results;
 
 namespace Papernote.Auth.API.Controllers;
 
-[ApiController]
 [Route("api/internal/users")]
 public class UserResolutionController : ApiControllerBase
 {
-    private readonly IUserResolutionService _userResolutionService;
+    private readonly ICachedUserResolutionService _userResolutionService;
+    private readonly ILogger<UserResolutionController> _logger;
 
-    public UserResolutionController(IUserResolutionService userResolutionService)
+    public UserResolutionController(ICachedUserResolutionService userResolutionService, ILogger<UserResolutionController> logger)
     {
         _userResolutionService = userResolutionService;
+        _logger = logger;
     }
 
     [HttpGet("resolve/username/{username}")]
-    [ProducesResponseType(typeof(Guid?), StatusCodes.Status200OK)]
+    [ProducesResponseType<Guid?>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetUserIdByUsername(string username, CancellationToken cancellationToken)
@@ -27,7 +30,7 @@ public class UserResolutionController : ApiControllerBase
     }
 
     [HttpGet("resolve/userid/{userId:guid}")]
-    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType<string>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetUsernameByUserId(Guid userId, CancellationToken cancellationToken)
@@ -42,6 +45,10 @@ public class UserResolutionController : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetUserIdsBatch([FromBody] BatchUserResolutionRequestDto request, CancellationToken cancellationToken)
     {
+        var validationError = this.ValidateModelState();
+        if (validationError != null)
+            return validationError.ToActionResult();
+
         var result = await _userResolutionService.GetUserIdsBatchAsync(request.Usernames, cancellationToken);
         return result.ToActionResult();
     }
@@ -52,6 +59,10 @@ public class UserResolutionController : ApiControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetUsernamesBatch([FromBody] BatchUserIdResolutionRequestDto request, CancellationToken cancellationToken)
     {
+        var validationError = this.ValidateModelState();
+        if (validationError != null)
+            return validationError.ToActionResult();
+
         var result = await _userResolutionService.GetUsernamesBatchAsync(request.UserIds, cancellationToken);
         return result.ToActionResult();
     }

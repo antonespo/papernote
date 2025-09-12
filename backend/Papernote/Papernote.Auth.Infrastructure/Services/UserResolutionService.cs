@@ -33,12 +33,6 @@ public class UserResolutionService : IUserResolutionService
                 return ResultBuilder.Success<Guid?>(null);
             }
 
-            if (!user.IsActive)
-            {
-                _logger.LogDebug("Inactive user found for username: {Username}", username);
-                return ResultBuilder.Success<Guid?>(null);
-            }
-
             return ResultBuilder.Success<Guid?>(user.Id);
         }
         catch (Exception ex)
@@ -60,12 +54,6 @@ public class UserResolutionService : IUserResolutionService
             if (user == null)
             {
                 _logger.LogDebug("User not found for ID: {UserId}", userId);
-                return ResultBuilder.Success<string?>(null);
-            }
-
-            if (!user.IsActive)
-            {
-                _logger.LogDebug("Inactive user found for ID: {UserId}", userId);
                 return ResultBuilder.Success<string?>(null);
             }
 
@@ -92,21 +80,10 @@ public class UserResolutionService : IUserResolutionService
         {
             var userIdsByUsername = await _userRepository.GetUserIdsByUsernamesAsync(usernamesList, cancellationToken);
 
-            // Filter out inactive users
-            var activeUsers = new Dictionary<string, Guid>();
-            foreach (var kvp in userIdsByUsername)
-            {
-                var user = await _userRepository.GetByIdAsync(kvp.Value, cancellationToken);
-                if (user != null && user.IsActive)
-                {
-                    activeUsers[kvp.Key] = kvp.Value;
-                }
-            }
+            _logger.LogDebug("Resolved {Count} users from {RequestedCount} usernames", 
+                userIdsByUsername.Count, usernamesList.Count);
 
-            _logger.LogDebug("Resolved {Count} active users from {RequestedCount} usernames", 
-                activeUsers.Count, usernamesList.Count);
-
-            return ResultBuilder.Success(activeUsers);
+            return ResultBuilder.Success(userIdsByUsername);
         }
         catch (Exception ex)
         {
@@ -129,21 +106,10 @@ public class UserResolutionService : IUserResolutionService
         {
             var usernamesByUserId = await _userRepository.GetUsernamesByUserIdsAsync(userIdsList, cancellationToken);
 
-            // Filter out inactive users
-            var activeUsers = new Dictionary<Guid, string>();
-            foreach (var kvp in usernamesByUserId)
-            {
-                var user = await _userRepository.GetByIdAsync(kvp.Key, cancellationToken);
-                if (user != null && user.IsActive)
-                {
-                    activeUsers[kvp.Key] = kvp.Value;
-                }
-            }
+            _logger.LogDebug("Resolved {Count} usernames from {RequestedCount} user IDs", 
+                usernamesByUserId.Count, userIdsList.Count);
 
-            _logger.LogDebug("Resolved {Count} active usernames from {RequestedCount} user IDs", 
-                activeUsers.Count, userIdsList.Count);
-
-            return ResultBuilder.Success(activeUsers);
+            return ResultBuilder.Success(usernamesByUserId);
         }
         catch (Exception ex)
         {

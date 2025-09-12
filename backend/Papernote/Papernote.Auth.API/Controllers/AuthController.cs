@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Papernote.Auth.API.Extensions;
 using Papernote.Auth.Core.Application.DTOs;
 using Papernote.Auth.Core.Application.Interfaces;
-using Papernote.Auth.API.Extensions;
+using Papernote.Auth.Infrastructure.Attributes;
 using Papernote.SharedMicroservices.Results;
 
 namespace Papernote.Auth.API.Controllers;
@@ -10,10 +11,14 @@ namespace Papernote.Auth.API.Controllers;
 public class AuthController : ApiControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IRateLimitService _rateLimitService;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IRateLimitService rateLimitService, ILogger<AuthController> logger)
     {
         _authService = authService;
+        _rateLimitService = rateLimitService;
+        _logger = logger;
     }
 
     [HttpPost("register")]
@@ -33,10 +38,12 @@ public class AuthController : ApiControllerBase
     }
 
     [HttpPost("login")]
+    [RateLimit("login")]
     [ProducesResponseType<AuthResponseDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Login([FromBody] LoginDto request, CancellationToken cancellationToken)
     {
@@ -45,6 +52,16 @@ public class AuthController : ApiControllerBase
             return validationError.ToActionResult();
 
         var result = await _authService.LoginAsync(request, cancellationToken);
+
+        if (result.IsSuccess)
+        {
+            var clearResult = await _rateLimitService.ClearAttemptsAsync(request.Username, "login", cancellationToken);
+            if (!clearResult.IsSuccess)
+            {
+                _logger.LogWarning("Failed to clear rate limit for successful login: {Error}", clearResult.Error);
+            }
+        }
+
         return result.ToActionResult();
     }
 

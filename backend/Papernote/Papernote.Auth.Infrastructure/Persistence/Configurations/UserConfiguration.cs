@@ -25,11 +25,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasMaxLength(255)
             .IsRequired();
 
-        builder.Property(u => u.Status)
-            .HasColumnName("status")
-            .HasConversion<int>()
-            .IsRequired();
-
         builder.Property(u => u.CreatedAt)
             .HasColumnName("created_at")
             .IsRequired();
@@ -42,13 +37,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasColumnName("last_login_at")
             .IsRequired(false);
 
-        // Indexes for performance
+        // Indexes for performance (no status index)
         builder.HasIndex(u => u.Username)
             .IsUnique()
             .HasDatabaseName("ix_users_username_unique");
-
-        builder.HasIndex(u => u.Status)
-            .HasDatabaseName("ix_users_status");
 
         builder.HasIndex(u => u.CreatedAt)
             .HasDatabaseName("ix_users_created_at");

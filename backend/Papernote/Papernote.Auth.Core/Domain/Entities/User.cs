@@ -5,7 +5,6 @@ public class User
     public Guid Id { get; private set; }
     public string Username { get; private set; } = string.Empty;
     public string PasswordHash { get; private set; } = string.Empty;
-    public UserStatus Status { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
     public DateTime? LastLoginAt { get; private set; }
@@ -17,7 +16,6 @@ public class User
         Id = Guid.NewGuid();
         Username = ValidateAndNormalizeUsername(username);
         PasswordHash = passwordHash ?? throw new ArgumentNullException(nameof(passwordHash));
-        Status = UserStatus.Active;
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -36,26 +34,6 @@ public class User
         LastLoginAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
-
-    public void Suspend()
-    {
-        Status = UserStatus.Suspended;
-        UpdatedAt = DateTime.UtcNow;
-    }
-
-    public void Activate()
-    {
-        Status = UserStatus.Active;
-        UpdatedAt = DateTime.UtcNow;
-    }
-
-    public void MarkAsDeleted()
-    {
-        Status = UserStatus.Deleted;
-        UpdatedAt = DateTime.UtcNow;
-    }
-
-    public bool IsActive => Status == UserStatus.Active;
 
     private static string ValidateAndNormalizeUsername(string username)
     {

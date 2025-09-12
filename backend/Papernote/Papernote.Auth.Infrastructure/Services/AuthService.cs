@@ -99,13 +99,6 @@ public class AuthService : IAuthService
                 return ResultBuilder.Unauthorized<AuthResponseDto>("Invalid credentials");
             }
 
-            // Check if user is active
-            if (!user.IsActive)
-            {
-                _logger.LogWarning("Login attempt for inactive user: {UserId}", user.Id);
-                return ResultBuilder.Forbidden<AuthResponseDto>("Account is suspended or deleted");
-            }
-
             // Verify password
             if (!_passwordHasher.VerifyPassword(loginDto.Password, user.PasswordHash))
             {
@@ -144,12 +137,6 @@ public class AuthService : IAuthService
             {
                 _logger.LogWarning("Invalid or expired refresh token used");
                 return ResultBuilder.Unauthorized<AuthResponseDto>("Invalid refresh token");
-            }
-
-            if (!refreshToken.User.IsActive)
-            {
-                _logger.LogWarning("Refresh token used for inactive user: {UserId}", refreshToken.User.Id);
-                return ResultBuilder.Forbidden<AuthResponseDto>("Account is suspended or deleted");
             }
 
             var newRefreshTokenValue = _jwtTokenService.GenerateRefreshToken();
