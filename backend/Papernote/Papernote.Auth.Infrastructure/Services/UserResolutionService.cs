@@ -18,54 +18,6 @@ public class UserResolutionService : IUserResolutionService
         _logger = logger;
     }
 
-    public async Task<Result<Guid?>> GetUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(username))
-            return ResultBuilder.BadRequest<Guid?>("Username is required");
-
-        try
-        {
-            var user = await _userRepository.GetByUsernameAsync(username, cancellationToken);
-            
-            if (user == null)
-            {
-                _logger.LogDebug("User not found for username: {Username}", username);
-                return ResultBuilder.Success<Guid?>(null);
-            }
-
-            return ResultBuilder.Success<Guid?>(user.Id);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error resolving user ID for username: {Username}", username);
-            return ResultBuilder.InternalServerError<Guid?>("User resolution failed");
-        }
-    }
-
-    public async Task<Result<string?>> GetUsernameByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
-    {
-        if (userId == Guid.Empty)
-            return ResultBuilder.BadRequest<string?>("Valid user ID is required");
-
-        try
-        {
-            var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
-            
-            if (user == null)
-            {
-                _logger.LogDebug("User not found for ID: {UserId}", userId);
-                return ResultBuilder.Success<string?>(null);
-            }
-
-            return ResultBuilder.Success<string?>(user.Username);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error resolving username for user ID: {UserId}", userId);
-            return ResultBuilder.InternalServerError<string?>("Username resolution failed");
-        }
-    }
-
     public async Task<Result<Dictionary<string, Guid>>> GetUserIdsBatchAsync(IEnumerable<string> usernames, CancellationToken cancellationToken = default)
     {
         if (usernames == null)

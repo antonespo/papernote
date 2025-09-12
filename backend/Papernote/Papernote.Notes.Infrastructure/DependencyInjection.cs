@@ -1,17 +1,19 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Papernote.Notes.Core.Application.Interfaces;
 using Papernote.Notes.Core.Domain.Interfaces;
 using Papernote.Notes.Infrastructure.Persistence;
 using Papernote.Notes.Infrastructure.Repositories;
 using Papernote.Notes.Infrastructure.Services;
 using Papernote.SharedMicroservices.Database;
+using Polly;
+using Polly.Extensions.Http;
+using Refit;
 
 namespace Papernote.Notes.Infrastructure;
 
-/// <summary>
-/// Extension methods for Infrastructure layer configuration
-/// </summary>
 public static class DependencyInjection
 {
     public static IServiceCollection AddNotesInfrastructure(
@@ -38,7 +40,57 @@ public static class DependencyInjection
 
         services.AddScoped<INoteRepository, NoteRepository>();
         services.AddScoped<INoteService, NoteService>();
+        services.AddScoped<INoteSharingService, NoteSharingService>();
 
         return services;
+    }
+
+    public static IServiceCollection AddNotesAuthentication(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddAuthServiceClient(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var authServiceBaseUrl = configuration["AuthService:BaseUrl"]
+            ?? throw new InvalidOperationException("AuthService:BaseUrl configuration is required");
+
+        services.AddRefitClient<IAuthServiceClient>()
+            .ConfigureHttpClient(client =>
+            {
+                client.BaseAddress = new Uri(authServiceBaseUrl);
+                client.Timeout = TimeSpan.FromSeconds(30);
+            })
+            .AddPolicyHandler(GetRetryPolicy())
+            .AddPolicyHandler(GetCircuitBreakerPolicy());
+
+        services.AddScoped<IAuthUserResolutionService, AuthUserResolutionService>();
+
+        return services;
+    }
+
+    private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+    {
+        return HttpPolicyExtensions
+            .HandleTransientHttpError()
+            .WaitAndRetryAsync(
+                retryCount: 3,
+                sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+    }
+
+    private static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy()
+    {
+        return HttpPolicyExtensions
+            .HandleTransientHttpError()
+            .CircuitBreakerAsync(
+                handledEventsAllowedBeforeBreaking: 5,
+                durationOfBreak: TimeSpan.FromSeconds(30));
     }
 }

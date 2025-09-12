@@ -9,125 +9,105 @@ public class CachedNoteService : ICachedNoteService
 {
     private readonly INoteService _noteService;
     private readonly ICacheService _cacheService;
-    private readonly ICacheKeyStrategy _keyStrategy;
+    private readonly INotesCacheKeyStrategy _keyStrategy;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<CachedNoteService> _logger;
 
     public CachedNoteService(
         INoteService noteService,
         ICacheService cacheService,
-        ICacheKeyStrategy keyStrategy,
+        INotesCacheKeyStrategy keyStrategy,
+        ICurrentUserService currentUserService,
         ILogger<CachedNoteService> logger)
     {
         _noteService = noteService;
         _cacheService = cacheService;
         _keyStrategy = keyStrategy;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
-    public async Task<Result<NoteDto>> GetNoteByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Result<IEnumerable<NoteSummaryDto>>> GetNotesAsync(GetNotesDto request, CancellationToken cancellationToken = default)
     {
-        var cacheKey = _keyStrategy.GetNoteKey(id);
-        
-        try
-        {
-            var cachedNote = await _cacheService.GetAsync<NoteDto>(cacheKey, cancellationToken);
-            if (cachedNote != null)
-            {
-                _logger.LogDebug("Cache HIT for note {NoteId}", id);
-                return ResultBuilder.Success(cachedNote);
-            }
+        var currentUserId = _currentUserService.GetCurrentUserId();
 
-            _logger.LogDebug("Cache MISS for note {NoteId}", id);
+        var cacheKey = request.IsSearch
+            ? _keyStrategy.GetUserSearchKey(currentUserId, request.Filter, request.SearchText, request.SearchTags)
+            : _keyStrategy.GetUserNotesListKey(currentUserId, request.Filter);
 
-            var result = await _noteService.GetNoteByIdAsync(id, cancellationToken);
-            
-            if (result.IsSuccess && result.Value != null)
-            {
-                await _cacheService.CacheNoteAsync(cacheKey, result.Value, cancellationToken);
-                _logger.LogDebug("Cached note {NoteId}", id);
-            }
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in cached GetNoteByIdAsync for {NoteId}", id);
-            return await _noteService.GetNoteByIdAsync(id, cancellationToken);
-        }
-    }
-
-    public async Task<Result<IEnumerable<NoteSummaryDto>>> GetNotesAsync(CancellationToken cancellationToken = default)
-    {
-        var cacheKey = _keyStrategy.GetNotesListKey();
-        
         try
         {
             var cachedNotes = await _cacheService.GetAsync<IEnumerable<NoteSummaryDto>>(cacheKey, cancellationToken);
             if (cachedNotes != null)
             {
-                _logger.LogDebug("Cache HIT for notes list");
+                _logger.LogDebug("Cache HIT for notes operation - Filter: {Filter}, IsSearch: {IsSearch}, UserId: {UserId}",
+                    request.Filter, request.IsSearch, currentUserId);
                 return ResultBuilder.Success(cachedNotes);
             }
 
-            _logger.LogDebug("Cache MISS for notes list");
+            _logger.LogDebug("Cache MISS for notes operation - Filter: {Filter}, IsSearch: {IsSearch}, UserId: {UserId}",
+                request.Filter, request.IsSearch, currentUserId);
 
-            var result = await _noteService.GetNotesAsync(cancellationToken);
-            
+            var result = await _noteService.GetNotesAsync(request, cancellationToken);
+
             if (result.IsSuccess && result.Value != null)
             {
-                await _cacheService.CacheNotesListAsync(cacheKey, result.Value, cancellationToken);
-                _logger.LogDebug("Cached notes list");
+                var cacheExpiry = request.IsSearch ? TimeSpan.FromMinutes(5) : TimeSpan.FromMinutes(2);
+                await _cacheService.SetAsync(cacheKey, result.Value, cacheExpiry, cancellationToken);
+                _logger.LogDebug("Cached notes operation - Filter: {Filter}, IsSearch: {IsSearch}, UserId: {UserId}",
+                    request.Filter, request.IsSearch, currentUserId);
             }
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in cached GetNotesAsync");
-            return await _noteService.GetNotesAsync(cancellationToken);
+            _logger.LogError(ex, "Error in cached GetNotesAsync for Filter: {Filter}, IsSearch: {IsSearch}, UserId: {UserId}",
+                request.Filter, request.IsSearch, currentUserId);
+            return await _noteService.GetNotesAsync(request, cancellationToken);
         }
     }
 
-    public async Task<Result<IEnumerable<NoteSummaryDto>>> SearchNotesAsync(SearchNotesDto searchDto, CancellationToken cancellationToken = default)
+    public async Task<Result<NoteDto>> GetNoteByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var cacheKey = _keyStrategy.GetSearchKey(searchDto.Text, searchDto.Tags);
-        
+        var currentUserId = _currentUserService.GetCurrentUserId();
+        var cacheKey = _keyStrategy.GetUserNoteKey(currentUserId, id);
+
         try
         {
-            var cachedResults = await _cacheService.GetAsync<IEnumerable<NoteSummaryDto>>(cacheKey, cancellationToken);
-            if (cachedResults != null)
+            var cachedNote = await _cacheService.GetAsync<NoteDto>(cacheKey, cancellationToken);
+            if (cachedNote != null)
             {
-                _logger.LogDebug("Cache HIT for search query");
-                return ResultBuilder.Success(cachedResults);
+                _logger.LogDebug("Cache HIT for note {NoteId} user {UserId}", id, currentUserId);
+                return ResultBuilder.Success(cachedNote);
             }
 
-            _logger.LogDebug("Cache MISS for search query");
+            _logger.LogDebug("Cache MISS for note {NoteId} user {UserId}", id, currentUserId);
 
-            var result = await _noteService.SearchNotesAsync(searchDto, cancellationToken);
-            
+            var result = await _noteService.GetNoteByIdAsync(id, cancellationToken);
+
             if (result.IsSuccess && result.Value != null)
             {
-                await _cacheService.CacheSearchResultsAsync(cacheKey, result.Value, cancellationToken);
-                _logger.LogDebug("Cached search results");
+                await _cacheService.SetAsync(cacheKey, result.Value, TimeSpan.FromMinutes(10), cancellationToken);
+                _logger.LogDebug("Cached note {NoteId} for user {UserId}", id, currentUserId);
             }
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in cached SearchNotesAsync");
-            return await _noteService.SearchNotesAsync(searchDto, cancellationToken);
+            _logger.LogError(ex, "Error in cached GetNoteByIdAsync for {NoteId} user {UserId}", id, currentUserId);
+            return await _noteService.GetNoteByIdAsync(id, cancellationToken);
         }
     }
 
     public async Task<Result<NoteDto>> CreateNoteAsync(CreateNoteDto createNoteDto, CancellationToken cancellationToken = default)
     {
         var result = await _noteService.CreateNoteAsync(createNoteDto, cancellationToken);
-        
+
         if (result.IsSuccess)
         {
-            await InvalidateNotesListCacheAsync(cancellationToken);
-            await InvalidateSearchCachesAsync(cancellationToken);
+            await InvalidateUserCachesAsync(cancellationToken);
             _logger.LogDebug("Invalidated caches after note creation");
         }
 
@@ -137,12 +117,11 @@ public class CachedNoteService : ICachedNoteService
     public async Task<Result<NoteDto>> UpdateNoteAsync(UpdateNoteDto updateNoteDto, CancellationToken cancellationToken = default)
     {
         var result = await _noteService.UpdateNoteAsync(updateNoteDto, cancellationToken);
-        
+
         if (result.IsSuccess)
         {
             await InvalidateNoteCacheAsync(updateNoteDto.Id, cancellationToken);
-            await InvalidateNotesListCacheAsync(cancellationToken);
-            await InvalidateSearchCachesAsync(cancellationToken);
+            await InvalidateUserCachesAsync(cancellationToken);
             _logger.LogDebug("Invalidated caches after note update {NoteId}", updateNoteDto.Id);
         }
 
@@ -152,12 +131,11 @@ public class CachedNoteService : ICachedNoteService
     public async Task<Result> DeleteNoteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await _noteService.DeleteNoteAsync(id, cancellationToken);
-        
+
         if (result.IsSuccess)
         {
             await InvalidateNoteCacheAsync(id, cancellationToken);
-            await InvalidateNotesListCacheAsync(cancellationToken);
-            await InvalidateSearchCachesAsync(cancellationToken);
+            await InvalidateUserCachesAsync(cancellationToken);
             _logger.LogDebug("Invalidated caches after note deletion {NoteId}", id);
         }
 
@@ -168,9 +146,9 @@ public class CachedNoteService : ICachedNoteService
     {
         try
         {
-            var cacheKey = _keyStrategy.GetNoteKey(noteId);
-            await _cacheService.RemoveAsync(cacheKey, cancellationToken);
-            _logger.LogDebug("Invalidated cache for note {NoteId}", noteId);
+            var pattern = _keyStrategy.GetPatternKey("user", $"*:note:{noteId}");
+            await _cacheService.RemoveByPatternAsync(pattern, cancellationToken);
+            _logger.LogDebug("Invalidated cache for note {NoteId} all users", noteId);
         }
         catch (Exception ex)
         {
@@ -178,31 +156,24 @@ public class CachedNoteService : ICachedNoteService
         }
     }
 
-    public async Task InvalidateSearchCachesAsync(CancellationToken cancellationToken = default)
+    public async Task InvalidateUserCachesAsync(CancellationToken cancellationToken = default)
     {
         try
         {
-            var pattern = "notes:search:*";
-            await _cacheService.RemoveByPatternAsync(pattern, cancellationToken);
-            _logger.LogDebug("Invalidated all search caches");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error invalidating search caches");
-        }
-    }
+            var currentUserId = _currentUserService.GetCurrentUserId();
+            var userPattern = _keyStrategy.GetAllUserCachePattern(currentUserId);
+            var searchPattern = _keyStrategy.GetSearchPatternKey();
 
-    public async Task InvalidateNotesListCacheAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var cacheKey = _keyStrategy.GetNotesListKey();
-            await _cacheService.RemoveAsync(cacheKey, cancellationToken);
-            _logger.LogDebug("Invalidated notes list cache");
+            await Task.WhenAll(
+                _cacheService.RemoveByPatternAsync(userPattern, cancellationToken),
+                _cacheService.RemoveByPatternAsync(searchPattern, cancellationToken)
+            );
+
+            _logger.LogDebug("Invalidated user caches for user {UserId}", currentUserId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error invalidating notes list cache");
+            _logger.LogError(ex, "Error invalidating user caches");
         }
     }
 
@@ -215,8 +186,9 @@ public class CachedNoteService : ICachedNoteService
                 var result = await _noteService.GetNoteByIdAsync(noteId, cancellationToken);
                 if (result.IsSuccess && result.Value != null)
                 {
-                    var cacheKey = _keyStrategy.GetNoteKey(noteId);
-                    await _cacheService.CacheNoteAsync(cacheKey, result.Value, cancellationToken);
+                    var currentUserId = _currentUserService.GetCurrentUserId();
+                    var cacheKey = _keyStrategy.GetUserNoteKey(currentUserId, noteId);
+                    await _cacheService.SetAsync(cacheKey, result.Value, TimeSpan.FromMinutes(10), cancellationToken);
                 }
             });
 

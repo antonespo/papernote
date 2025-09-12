@@ -26,6 +26,10 @@ public class NoteConfiguration : IEntityTypeConfiguration<Note>
             .HasMaxLength(50000)
             .IsRequired();
 
+        builder.Property(n => n.OwnerUserId)
+            .HasColumnName("owner_user_id")
+            .IsRequired();
+
         builder.Property(n => n.CreatedAt)
             .HasColumnName("created_at")
             .IsRequired();
@@ -51,6 +55,14 @@ public class NoteConfiguration : IEntityTypeConfiguration<Note>
             .WithOne(nt => nt.Note)
             .HasForeignKey(nt => nt.NoteId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(n => n.NoteShares)
+            .WithOne(ns => ns.Note)
+            .HasForeignKey(ns => ns.NoteId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(n => n.OwnerUserId)
+            .HasDatabaseName("ix_notes_owner_user_id");
 
         builder.HasIndex(n => n.CreatedAt)
             .HasDatabaseName("ix_notes_created_at");

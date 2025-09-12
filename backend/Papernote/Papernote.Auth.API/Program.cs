@@ -21,14 +21,12 @@ builder.Services.Configure<RateLimitSettings>(
 // AutoMapper
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<AuthMappingProfile>());
 
-// Redis Cache Services
-builder.Services.AddRedisCache(builder.Configuration);
-
 // Infrastructure services
 var connectionString = builder.Configuration.GetConnectionString("AuthDatabase")
     ?? throw new InvalidOperationException("Connection string 'AuthDatabase' not found in configuration.");
 
 builder.Services.AddAuthInfrastructure(connectionString);
+builder.Services.AddAuthCache(builder.Configuration);
 
 // Cached services
 builder.Services.AddCachedUserResolutionService();

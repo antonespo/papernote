@@ -12,6 +12,7 @@ public class NotesDbContext : DbContext
 
     public DbSet<Note> Notes { get; set; } = null!;
     public DbSet<NoteTag> NoteTags { get; set; } = null!;
+    public DbSet<NoteShare> NoteShares { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -21,5 +22,6 @@ public class NotesDbContext : DbContext
         
         modelBuilder.ApplyConfiguration(new NoteConfiguration());
         modelBuilder.ApplyConfiguration(new NoteTagConfiguration());
+        modelBuilder.ApplyConfiguration(new NoteShareConfiguration());
     }
 }

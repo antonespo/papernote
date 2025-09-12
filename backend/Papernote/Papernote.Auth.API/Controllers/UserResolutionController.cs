@@ -19,26 +19,6 @@ public class UserResolutionController : ApiControllerBase
         _logger = logger;
     }
 
-    [HttpGet("resolve/username/{username}")]
-    [ProducesResponseType<Guid?>(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetUserIdByUsername(string username, CancellationToken cancellationToken)
-    {
-        var result = await _userResolutionService.GetUserIdByUsernameAsync(username, cancellationToken);
-        return result.ToActionResult();
-    }
-
-    [HttpGet("resolve/userid/{userId:guid}")]
-    [ProducesResponseType<string>(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetUsernameByUserId(Guid userId, CancellationToken cancellationToken)
-    {
-        var result = await _userResolutionService.GetUsernameByUserIdAsync(userId, cancellationToken);
-        return result.ToActionResult();
-    }
-
     [HttpPost("resolve/batch/usernames")]
     [ProducesResponseType<Dictionary<string, Guid>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]

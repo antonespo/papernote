@@ -1,22 +1,20 @@
 using Microsoft.Extensions.Logging;
 using Papernote.Auth.Core.Application.Interfaces;
-using Papernote.Auth.Infrastructure.Cache;
 using Papernote.SharedMicroservices.Cache;
-using Papernote.SharedMicroservices.Results;
 
 namespace Papernote.Auth.Infrastructure.Services;
 
 public class AuthCacheService
 {
     private readonly IAdvancedCacheService _cacheService;
-    private readonly AuthCacheKeyStrategy _keyStrategy;
+    private readonly IAuthCacheKeyStrategy _keyStrategy;
     private readonly ILogger<AuthCacheService> _logger;
 
     private const int USER_RESOLUTION_CACHE_MINUTES = 10;
 
     public AuthCacheService(
         IAdvancedCacheService cacheService,
-        AuthCacheKeyStrategy keyStrategy,
+        IAuthCacheKeyStrategy keyStrategy,
         ILogger<AuthCacheService> logger)
     {
         _cacheService = cacheService;

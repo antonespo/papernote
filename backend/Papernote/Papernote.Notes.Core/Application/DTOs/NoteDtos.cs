@@ -28,6 +28,21 @@ public record SearchNotesDto(
 );
 
 /// <summary>
+/// DTO for unified note retrieval with filtering and search
+/// </summary>
+public record GetNotesDto(
+    NoteFilter Filter = NoteFilter.Owned,
+    string? SearchText = null,
+    List<string>? SearchTags = null
+)
+{
+    /// <summary>
+    /// Indicates if this is a search operation
+    /// </summary>
+    public bool IsSearch => !string.IsNullOrWhiteSpace(SearchText) || (SearchTags?.Count > 0);
+}
+
+/// <summary>
 /// DTO for note response
 /// </summary>
 public class NoteDto
@@ -38,6 +53,8 @@ public class NoteDto
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public List<string> Tags { get; set; } = new();
+    public string OwnerUsername { get; set; } = string.Empty;
+    public List<string> SharedWithUsernames { get; set; } = new();
 }
 
 /// <summary>
@@ -51,4 +68,5 @@ public class NoteSummaryDto
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public List<string> Tags { get; set; } = new();
+    public string OwnerUsername { get; set; } = string.Empty;
 }

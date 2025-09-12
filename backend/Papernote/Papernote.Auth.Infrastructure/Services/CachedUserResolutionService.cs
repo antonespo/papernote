@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Papernote.Auth.Core.Application.Interfaces;
-using Papernote.Auth.Infrastructure.Cache;
+using Papernote.Auth.Infrastructure.Services;
 using Papernote.SharedMicroservices.Results;
 
 namespace Papernote.Auth.Infrastructure.Services;
@@ -9,89 +9,19 @@ public class CachedUserResolutionService : ICachedUserResolutionService
 {
     private readonly IUserResolutionService _userResolutionService;
     private readonly AuthCacheService _cacheService;
-    private readonly AuthCacheKeyStrategy _keyStrategy;
+    private readonly IAuthCacheKeyStrategy _keyStrategy;
     private readonly ILogger<CachedUserResolutionService> _logger;
 
     public CachedUserResolutionService(
         IUserResolutionService userResolutionService,
         AuthCacheService cacheService,
-        AuthCacheKeyStrategy keyStrategy,
+        IAuthCacheKeyStrategy keyStrategy,
         ILogger<CachedUserResolutionService> logger)
     {
         _userResolutionService = userResolutionService;
         _cacheService = cacheService;
         _keyStrategy = keyStrategy;
         _logger = logger;
-    }
-
-    public async Task<Result<Guid?>> GetUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(username))
-            return ResultBuilder.BadRequest<Guid?>("Username is required");
-
-        var cacheKey = _keyStrategy.GetUserResolutionKey(username);
-
-        try
-        {
-            var cachedUserIdStr = await _cacheService.GetUserResolutionAsync<string>(cacheKey, cancellationToken);
-            if (!string.IsNullOrWhiteSpace(cachedUserIdStr) && Guid.TryParse(cachedUserIdStr, out var cachedUserId))
-            {
-                _logger.LogDebug("Cache HIT for username resolution: {Username}", username);
-                return ResultBuilder.Success<Guid?>(cachedUserId);
-            }
-
-            _logger.LogDebug("Cache MISS for username resolution: {Username}", username);
-
-            var result = await _userResolutionService.GetUserIdByUsernameAsync(username, cancellationToken);
-
-            if (result.IsSuccess && result.Value.HasValue)
-            {
-                await _cacheService.CacheUserResolutionAsync(cacheKey, result.Value.Value.ToString(), cancellationToken);
-                _logger.LogDebug("Cached username resolution: {Username} ? {UserId}", username, result.Value);
-            }
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in cached GetUserIdByUsernameAsync for {Username}", username);
-            return await _userResolutionService.GetUserIdByUsernameAsync(username, cancellationToken);
-        }
-    }
-
-    public async Task<Result<string?>> GetUsernameByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
-    {
-        if (userId == Guid.Empty)
-            return ResultBuilder.BadRequest<string?>("Valid user ID is required");
-
-        var cacheKey = _keyStrategy.GetUserIdResolutionKey(userId);
-
-        try
-        {
-            var cachedUsername = await _cacheService.GetUserResolutionAsync<string>(cacheKey, cancellationToken);
-            if (!string.IsNullOrWhiteSpace(cachedUsername))
-            {
-                _logger.LogDebug("Cache HIT for userId resolution: {UserId}", userId);
-                return ResultBuilder.Success<string?>(cachedUsername);
-            }
-
-            _logger.LogDebug("Cache MISS for userId resolution: {UserId}", userId);
-
-            var result = await _userResolutionService.GetUsernameByUserIdAsync(userId, cancellationToken);
-
-            if (result.IsSuccess && !string.IsNullOrWhiteSpace(result.Value))
-            {
-                await _cacheService.CacheUserResolutionAsync(cacheKey, result.Value, cancellationToken);
-                _logger.LogDebug("Cached userId resolution: {UserId} ? {Username}", userId, result.Value);
-            }
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in cached GetUsernameByUserIdAsync for {UserId}", userId);
-            return await _userResolutionService.GetUsernameByUserIdAsync(userId, cancellationToken);
-        }
     }
 
     public async Task<Result<Dictionary<string, Guid>>> GetUserIdsBatchAsync(IEnumerable<string> usernames, CancellationToken cancellationToken = default)
