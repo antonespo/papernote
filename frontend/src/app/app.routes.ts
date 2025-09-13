@@ -35,7 +35,15 @@ export const routes: Routes = [
   {
     path: 'notes',
     canActivate: [authGuard],
-    children: [],
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/notes/components/notes.component').then(
+            (m) => m.NotesComponent
+          ),
+      },
+    ],
   },
   {
     path: '**',

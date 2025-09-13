@@ -58,13 +58,16 @@ export class NotesService {
             JSON.stringify(prev.selectedTags) ===
               JSON.stringify(curr.selectedTags)
         ),
-        switchMap((queryParams) => this.loadNotesInternal(queryParams))
+        switchMap((queryParams) => {
+          const filter = queryParams.filterType === 'own' ? 'owned' : 'shared';
+          return this.loadNotesInternal(filter, queryParams);
+        })
       )
       .subscribe();
   }
 
-  loadNotes(queryParams?: NotesQueryParams): Observable<NoteSummaryDto[]> {
-    return this.loadNotesInternal(queryParams);
+  loadNotes(filter: 'owned' | 'shared'): Observable<NoteSummaryDto[]> {
+    return this.loadNotesInternal(filter);
   }
 
   searchNotes(queryParams: NotesQueryParams): void {
@@ -72,11 +75,12 @@ export class NotesService {
   }
 
   private loadNotesInternal(
+    filter: 'owned' | 'shared',
     queryParams?: NotesQueryParams
   ): Observable<NoteSummaryDto[]> {
     this.setLoading(true);
 
-    const searchParams = this.buildSearchParams(queryParams);
+    const searchParams = this.buildSearchParams(filter, queryParams);
 
     return this.notesApi
       .getNotes(searchParams.filter, searchParams.text, searchParams.tags)
@@ -99,15 +103,16 @@ export class NotesService {
       );
   }
 
-  private buildSearchParams(queryParams?: NotesQueryParams): NotesSearchParams {
+  private buildSearchParams(
+    filter: 'owned' | 'shared',
+    queryParams?: NotesQueryParams
+  ): NotesSearchParams {
+    const searchParams: NotesSearchParams = {
+      filter: filter,
+    };
+
     if (!queryParams) {
-      return {};
-    }
-
-    const searchParams: NotesSearchParams = {};
-
-    if (queryParams.filterType) {
-      searchParams.filter = queryParams.filterType;
+      return searchParams;
     }
 
     if (queryParams.searchText) {

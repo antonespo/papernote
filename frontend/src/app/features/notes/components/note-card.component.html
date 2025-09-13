@@ -1,0 +1,55 @@
+<mat-card class="note-card" (click)="onNoteClick()">
+  <mat-card-header>
+    <mat-card-title class="note-title">
+      {{ note.title || "Untitled Note" }}
+    </mat-card-title>
+    <mat-card-subtitle class="note-metadata">
+      <span class="owner">by {{ note.ownerUsername }}</span>
+      <span class="date">{{ formatDate(note.updatedAt) }}</span>
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <p class="note-preview">
+      {{ note.contentPreview || "No content available" }}
+    </p>
+
+    @if (note.tags && note.tags.length > 0) {
+    <div class="tags-container">
+      <mat-chip-set>
+        @for (tag of note.tags; track tag) {
+        <mat-chip class="tag-chip">{{ tag }}</mat-chip>
+        }
+      </mat-chip-set>
+    </div>
+    }
+  </mat-card-content>
+
+  <mat-card-actions align="end">
+    <div class="card-actions">
+      <span class="created-date">
+        Created {{ formatDate(note.createdAt) }}
+      </span>
+
+      @if (isOwned) {
+      <div class="action-buttons">
+        <button
+          mat-icon-button
+          (click)="onEditClick($event)"
+          matTooltip="Edit note"
+        >
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          (click)="onDeleteClick($event)"
+          matTooltip="Delete note"
+          color="warn"
+        >
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+      }
+    </div>
+  </mat-card-actions>
+</mat-card>
