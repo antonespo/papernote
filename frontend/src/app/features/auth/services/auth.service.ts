@@ -1,7 +1,21 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import {
+  Injectable,
+  signal,
+  computed,
+  inject,
+  DestroyRef,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { Observable, of, throwError, EMPTY } from 'rxjs';
-import { map, catchError, tap, finalize } from 'rxjs/operators';
+import { Observable, of, throwError, EMPTY, timer } from 'rxjs';
+import {
+  map,
+  catchError,
+  tap,
+  finalize,
+  filter,
+  switchMap,
+} from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthState } from '../../../shared/models/state.model';
 import {
@@ -20,6 +34,11 @@ import { extractErrorMessage } from '../../../shared/utils/error.utils';
 export class AuthService {
   private readonly router = inject(Router);
   private readonly authApi = inject(AuthApiService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  private readonly isRefreshActive = signal(false);
+  private readonly checkIntervalMinutes = 1;
+  private readonly refreshThresholdMinutes = 5;
 
   private readonly authState = signal<AuthState>({
     isLoading: false,
@@ -69,6 +88,8 @@ export class AuthService {
           user,
           expiresAt,
         }));
+
+        this.startAutomaticRefresh();
       } catch {
         this.logout();
       }
@@ -87,6 +108,7 @@ export class AuthService {
     return this.authApi.loginUser(loginDto).pipe(
       tap((response: AuthResponseDto) => {
         this.setAuthenticatedState(response);
+        this.startAutomaticRefresh();
       }),
       tap(() => {
         this.router.navigate(['/notes']);
@@ -116,6 +138,7 @@ export class AuthService {
     return this.authApi.registerUser(registerDto).pipe(
       tap((response: AuthResponseDto) => {
         this.setAuthenticatedState(response);
+        this.startAutomaticRefresh();
       }),
       tap(() => {
         this.router.navigate(['/notes']);
@@ -174,6 +197,8 @@ export class AuthService {
   }
 
   private clearAuthState(): void {
+    this.stopAutomaticRefresh();
+
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
@@ -252,5 +277,40 @@ export class AuthService {
 
   clearError(): void {
     this.authState.update((state) => ({ ...state, error: null }));
+  }
+
+  private startAutomaticRefresh(): void {
+    if (this.isRefreshActive()) {
+      return;
+    }
+
+    this.isRefreshActive.set(true);
+
+    timer(0, this.checkIntervalMinutes * 60 * 1000)
+      .pipe(
+        filter(() => this.isAuthenticated()),
+        filter(() => !this.isLoading()),
+        switchMap(() => {
+          if (this.isTokenExpiringSoon(this.refreshThresholdMinutes)) {
+            return this.refreshAccessToken();
+          }
+          return EMPTY;
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe({
+        next: (newToken) => {
+          if (newToken) {
+            console.debug('Token refreshed automatically');
+          }
+        },
+        error: (error) => {
+          console.error('Automatic token refresh failed:', error);
+        },
+      });
+  }
+
+  private stopAutomaticRefresh(): void {
+    this.isRefreshActive.set(false);
   }
 }
