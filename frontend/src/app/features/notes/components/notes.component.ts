@@ -61,7 +61,7 @@ export class NotesComponent implements OnInit {
   }
 
   onCreateNote(): void {
-    this.router.navigate(['/notes', 'create']);
+    this.router.navigate(['/notes', 'new']);
   }
 
   onRetry(): void {
@@ -82,5 +82,13 @@ export class NotesComponent implements OnInit {
 
   clearError(): void {
     this.notesService.clearError();
+  }
+
+  onNoteDeleted(noteId: string): void {
+    if (this.selectedTabIndex() === 0) {
+      this.loadOwnedNotes();
+    } else {
+      this.loadSharedNotes();
+    }
   }
 }

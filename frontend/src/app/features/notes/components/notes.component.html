@@ -5,105 +5,123 @@
 
   <app-notes-search></app-notes-search>
 
-  <mat-tab-group
-    [selectedIndex]="selectedTabIndex()"
-    (selectedIndexChange)="onTabChange($event)"
-    class="notes-tabs"
-  >
-    <mat-tab label="My Notes">
-      <div class="tab-content">
-        @if (isLoading()) {
-        <div class="search-loading-overlay">
-          <div class="search-loading-content">
-            <mat-spinner diameter="40"></mat-spinner>
-            <p>Searching your notes...</p>
+  <div class="tabs-section">
+    <mat-tab-group
+      [selectedIndex]="selectedTabIndex()"
+      (selectedIndexChange)="onTabChange($event)"
+      class="notes-tabs"
+    >
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>person</mat-icon>
+          My Notes
+        </ng-template>
+        <div class="tab-content">
+          @if (isLoading()) {
+          <div class="search-loading-overlay">
+            <div class="search-loading-content">
+              <mat-spinner diameter="40"></mat-spinner>
+              <p>Searching your notes...</p>
+            </div>
           </div>
-        </div>
-        } @else if (error()) {
-        <div class="error-container">
-          <mat-card class="error-card">
-            <mat-card-content>
-              <div class="error-content">
-                <mat-icon color="warn" class="error-icon">error</mat-icon>
-                <div class="error-text">
-                  <h3>Failed to load notes</h3>
-                  <p>{{ error() }}</p>
+          } @else if (error()) {
+          <div class="error-container">
+            <mat-card class="error-card">
+              <mat-card-content>
+                <div class="error-content">
+                  <mat-icon color="warn" class="error-icon">error</mat-icon>
+                  <div class="error-text">
+                    <h3>Failed to load notes</h3>
+                    <p>{{ error() }}</p>
+                  </div>
                 </div>
-              </div>
-            </mat-card-content>
-            <mat-card-actions>
-              <button mat-button color="primary" (click)="onRetry()">
-                <mat-icon>refresh</mat-icon>
-                Retry
-              </button>
-              <button mat-button (click)="clearError()">Dismiss</button>
-            </mat-card-actions>
-          </mat-card>
-        </div>
-        } @else if (notes().length === 0) {
-        <div class="empty-state">
-          <mat-icon class="empty-icon">note_add</mat-icon>
-          <h2>No notes found</h2>
-          <p>Try adjusting your search criteria or create your first note!</p>
-          <button mat-raised-button color="primary" (click)="onCreateNote()">
-            <mat-icon>add</mat-icon>
-            Create Note
-          </button>
-        </div>
-        } @else {
-        <div class="notes-grid">
-          @for (note of notes(); track note.id) {
-          <app-note-card [note]="note" [isOwned]="true"></app-note-card>
+              </mat-card-content>
+              <mat-card-actions>
+                <button mat-button color="primary" (click)="onRetry()">
+                  <mat-icon>refresh</mat-icon>
+                  Retry
+                </button>
+                <button mat-button (click)="clearError()">Dismiss</button>
+              </mat-card-actions>
+            </mat-card>
+          </div>
+          } @else if (notes().length === 0) {
+          <div class="empty-state">
+            <mat-icon class="empty-icon">note_add</mat-icon>
+            <h2>No notes found</h2>
+            <p>Try adjusting your search criteria or create your first note!</p>
+            <button mat-raised-button color="primary" (click)="onCreateNote()">
+              <mat-icon>add</mat-icon>
+              Create Note
+            </button>
+          </div>
+          } @else {
+          <div class="notes-grid">
+            @for (note of notes(); track note.id) {
+            <app-note-card
+              [note]="note"
+              [isOwned]="true"
+              (noteDeleted)="onNoteDeleted($event)"
+            ></app-note-card>
+            }
+          </div>
           }
         </div>
-        }
-      </div>
-    </mat-tab>
+      </mat-tab>
 
-    <mat-tab label="Shared with Me">
-      <div class="tab-content">
-        @if (isLoading()) {
-        <div class="search-loading-overlay">
-          <div class="search-loading-content">
-            <mat-spinner diameter="40"></mat-spinner>
-            <p>Searching shared notes...</p>
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>share</mat-icon>
+          Shared with Me
+        </ng-template>
+        <div class="tab-content">
+          @if (isLoading()) {
+          <div class="search-loading-overlay">
+            <div class="search-loading-content">
+              <mat-spinner diameter="40"></mat-spinner>
+              <p>Searching shared notes...</p>
+            </div>
           </div>
-        </div>
-        } @else if (error()) {
-        <div class="error-container">
-          <mat-card class="error-card">
-            <mat-card-content>
-              <div class="error-content">
-                <mat-icon color="warn" class="error-icon">error</mat-icon>
-                <div class="error-text">
-                  <h3>Failed to load shared notes</h3>
-                  <p>{{ error() }}</p>
+          } @else if (error()) {
+          <div class="error-container">
+            <mat-card class="error-card">
+              <mat-card-content>
+                <div class="error-content">
+                  <mat-icon color="warn" class="error-icon">error</mat-icon>
+                  <div class="error-text">
+                    <h3>Failed to load shared notes</h3>
+                    <p>{{ error() }}</p>
+                  </div>
                 </div>
-              </div>
-            </mat-card-content>
-            <mat-card-actions>
-              <button mat-button color="primary" (click)="onRetry()">
-                <mat-icon>refresh</mat-icon>
-                Retry
-              </button>
-              <button mat-button (click)="clearError()">Dismiss</button>
-            </mat-card-actions>
-          </mat-card>
-        </div>
-        } @else if (notes().length === 0) {
-        <div class="empty-state">
-          <mat-icon class="empty-icon">share</mat-icon>
-          <h2>No shared notes found</h2>
-          <p>Notes shared with you by other users will appear here.</p>
-        </div>
-        } @else {
-        <div class="notes-grid">
-          @for (note of notes(); track note.id) {
-          <app-note-card [note]="note" [isOwned]="false"></app-note-card>
+              </mat-card-content>
+              <mat-card-actions>
+                <button mat-button color="primary" (click)="onRetry()">
+                  <mat-icon>refresh</mat-icon>
+                  Retry
+                </button>
+                <button mat-button (click)="clearError()">Dismiss</button>
+              </mat-card-actions>
+            </mat-card>
+          </div>
+          } @else if (notes().length === 0) {
+          <div class="empty-state">
+            <mat-icon class="empty-icon">share</mat-icon>
+            <h2>No shared notes found</h2>
+            <p>Notes shared with you by other users will appear here.</p>
+          </div>
+          } @else {
+          <div class="notes-grid">
+            @for (note of notes(); track note.id) {
+            <app-note-card
+              [note]="note"
+              [isOwned]="false"
+              (noteDeleted)="onNoteDeleted($event)"
+            ></app-note-card>
+            }
+          </div>
           }
         </div>
-        }
-      </div>
-    </mat-tab>
-  </mat-tab-group>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
 </div>

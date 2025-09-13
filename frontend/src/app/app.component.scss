@@ -9,9 +9,3 @@
   background-color: #fafafa;
   min-height: calc(100vh - 64px);
 }
-
-@media (max-width: 599px) {
-  .app-content {
-    min-height: calc(100vh - 56px);
-  }
-}

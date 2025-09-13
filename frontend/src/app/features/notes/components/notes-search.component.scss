@@ -1,0 +1,73 @@
+.search-container {
+  padding: 1.5rem;
+  background: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.search-form {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.search-field {
+  flex: 2;
+  min-width: 300px;
+
+  .mat-mdc-form-field-outline {
+    color: rgba(0, 0, 0, 0.12);
+  }
+
+  &.mat-focused .mat-mdc-form-field-outline-thick {
+    color: #1565c0;
+  }
+
+  .mat-mdc-text-field-wrapper {
+    background-color: white;
+  }
+}
+
+.tags-field {
+  flex: 3;
+  min-width: 400px;
+
+  .mat-mdc-form-field-outline {
+    color: rgba(0, 0, 0, 0.12);
+  }
+
+  &.mat-focused .mat-mdc-form-field-outline-thick {
+    color: #1565c0;
+  }
+
+  .mat-mdc-text-field-wrapper {
+    background-color: white;
+  }
+
+  .mat-mdc-chip-set {
+    .mat-mdc-chip {
+      background-color: #e3f2fd;
+      color: #1565c0;
+      border: 1px solid #bbdefb;
+
+      &:hover {
+        background-color: #bbdefb;
+      }
+
+      .mat-mdc-chip-remove {
+        color: #1565c0;
+        opacity: 0.7;
+
+        &:hover {
+          opacity: 1;
+          background-color: rgba(21, 101, 192, 0.1);
+        }
+      }
+    }
+  }
+}
+
+.mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}

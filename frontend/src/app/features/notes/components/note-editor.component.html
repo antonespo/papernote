@@ -1,0 +1,203 @@
+<div class="note-editor-container">
+  <div class="editor-header">
+    <button
+      mat-icon-button
+      (click)="onCancel()"
+      class="back-button"
+      [disabled]="formState().isSaving"
+    >
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>{{ isEditMode() ? "Edit Note" : "Create New Note" }}</h1>
+    <div class="header-actions">
+      @if (isEditMode() && !isReadOnly()) {
+      <button
+        mat-button
+        color="warn"
+        (click)="onDelete()"
+        [disabled]="formState().isSaving"
+      >
+        <mat-icon>delete</mat-icon>
+        Delete
+      </button>
+      } @if (!isReadOnly()) {
+      <button
+        mat-raised-button
+        class="create-button"
+        (click)="onSave()"
+        [disabled]="!canSave()"
+      >
+        @if (formState().isSaving) {
+        <mat-spinner diameter="20"></mat-spinner>
+        } @else {
+        <mat-icon>save</mat-icon>
+        }
+        {{ isEditMode() ? "Update" : "Create" }}
+      </button>
+      }
+    </div>
+  </div>
+
+  @if (formState().error || serviceError()) {
+  <mat-card class="error-card">
+    <mat-card-content>
+      <div class="error-content">
+        <mat-icon color="warn">error</mat-icon>
+        <span>{{ formState().error || serviceError() }}</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+  }
+
+  <form [formGroup]="noteForm" class="note-form">
+    <mat-card class="form-section">
+      <mat-card-content>
+        @if (isReadOnly()) {
+        <div class="readonly-field">
+          <h2 class="readonly-title">
+            {{ noteForm.get("title")?.value || "Untitled Note" }}
+          </h2>
+        </div>
+        <div class="readonly-field">
+          <div class="readonly-content">
+            {{ noteForm.get("content")?.value || "No content available" }}
+          </div>
+        </div>
+        } @else {
+        <mat-form-field class="full-width" appearance="outline">
+          <mat-label>Title</mat-label>
+          <input
+            matInput
+            formControlName="title"
+            placeholder="Enter note title..."
+            maxlength="200"
+          />
+          @if (noteForm.get('title')?.errors?.['required']) {
+          <mat-error>Title is required</mat-error>
+          } @if (noteForm.get('title')?.errors?.['minlength']) {
+          <mat-error>Title must be at least 3 characters</mat-error>
+          } @if (noteForm.get('title')?.errors?.['maxlength']) {
+          <mat-error>Title cannot exceed 200 characters</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field class="full-width" appearance="outline">
+          <mat-label>Content</mat-label>
+          <textarea
+            matInput
+            formControlName="content"
+            placeholder="Write your note content here..."
+            rows="10"
+          ></textarea>
+          @if (noteForm.get('content')?.errors?.['required']) {
+          <mat-error>Content is required</mat-error>
+          } @if (noteForm.get('content')?.errors?.['minlength']) {
+          <mat-error>Content must be at least 10 characters</mat-error>
+          }
+        </mat-form-field>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <div class="side-by-side-sections">
+      <mat-card class="form-section half-width">
+        <mat-card-header>
+          <mat-card-title>Tags</mat-card-title>
+          @if (!isReadOnly()) {
+          <mat-card-subtitle>Add tags to organize your note</mat-card-subtitle>
+          }
+        </mat-card-header>
+        <mat-card-content>
+          @if (isReadOnly()) { @if (tagsArray().controls.length > 0) {
+          <div class="readonly-tags">
+            @for (tag of tagsArray().controls; track $index) {
+            <span class="readonly-tag">{{ tag.value }}</span>
+            }
+          </div>
+          } @else {
+          <p class="empty-state-text">No tags assigned</p>
+          } } @else {
+          <mat-form-field class="full-width" appearance="outline">
+            <mat-label>Tags</mat-label>
+            <mat-chip-grid #chipGrid>
+              @for (tag of tagsArray().controls; track $index; let i = $index) {
+              <mat-chip-row
+                (removed)="removeTag(i)"
+                [editable]="true"
+                (edited)="editTag(i, $event)"
+              >
+                {{ tag.value }}
+                <button type="button" matChipRemove>
+                  <mat-icon>cancel</mat-icon>
+                </button>
+              </mat-chip-row>
+              }
+              <input
+                placeholder="Add tag..."
+                [matChipInputFor]="chipGrid"
+                [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                [matChipInputAddOnBlur]="true"
+                (matChipInputTokenEnd)="addTag($event)"
+              />
+            </mat-chip-grid>
+            @if (tagsArray().errors?.['maxlength']) {
+            <mat-error>Maximum 10 tags allowed</mat-error>
+            }
+          </mat-form-field>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="form-section half-width">
+        <mat-card-header>
+          <mat-card-title>Share with Users</mat-card-title>
+          @if (!isReadOnly()) {
+          <mat-card-subtitle
+            >Enter usernames to share this note</mat-card-subtitle
+          >
+          }
+        </mat-card-header>
+        <mat-card-content>
+          @if (isReadOnly()) { @if (sharedWithArray().controls.length > 0) {
+          <div class="readonly-shared">
+            @for (username of sharedWithArray().controls; track $index) {
+            <span class="readonly-user">{{ username.value }}</span>
+            }
+          </div>
+          } @else {
+          <p class="empty-state-text">Not shared with anyone</p>
+          } } @else {
+          <mat-form-field class="full-width" appearance="outline">
+            <mat-label>Shared with</mat-label>
+            <mat-chip-grid #shareChipGrid>
+              @for (username of sharedWithArray().controls; track $index; let i
+              = $index) {
+              <mat-chip-row
+                (removed)="removeSharedUser(i)"
+                [editable]="true"
+                (edited)="editSharedUser(i, $event)"
+              >
+                {{ username.value }}
+                <button type="button" matChipRemove>
+                  <mat-icon>cancel</mat-icon>
+                </button>
+              </mat-chip-row>
+              }
+              <input
+                placeholder="Add username..."
+                [matChipInputFor]="shareChipGrid"
+                [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                [matChipInputAddOnBlur]="true"
+                (matChipInputTokenEnd)="addSharedUser($event)"
+              />
+            </mat-chip-grid>
+            @if (sharedWithArray().errors?.['maxlength']) {
+            <mat-error>Maximum 20 users allowed</mat-error>
+            }
+          </mat-form-field>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </form>
+</div>

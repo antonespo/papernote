@@ -43,6 +43,20 @@ export const routes: Routes = [
             (m) => m.NotesComponent
           ),
       },
+      {
+        path: 'new',
+        loadComponent: () =>
+          import('./features/notes/components/note-editor.component').then(
+            (m) => m.NoteEditorComponent
+          ),
+      },
+      {
+        path: ':id',
+        loadComponent: () =>
+          import('./features/notes/components/note-editor.component').then(
+            (m) => m.NoteEditorComponent
+          ),
+      },
     ],
   },
   {

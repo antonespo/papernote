@@ -1,46 +1,69 @@
 .note-card {
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+  margin-bottom: 1.5rem;
   height: fit-content;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: white;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  .mat-mdc-card-header {
+    padding: 1rem 1rem 0.5rem;
+  }
+
+  .mat-mdc-card-content {
+    padding: 1rem;
+  }
+
+  .mat-mdc-card-actions {
+    padding: 0.5rem 1rem 1rem;
+    margin: 0;
   }
 }
 
 .note-title {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 600;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: #1565c0;
 }
 
 .note-metadata {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
   font-size: 0.875rem;
-  color: rgba(0, 0, 0, 0.6);
+  color: #666;
 
   .owner {
     font-weight: 500;
+    color: #1565c0;
+    background: rgba(21, 101, 192, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
   }
 
   .date {
     font-size: 0.8rem;
+    color: #999;
   }
 }
 
 .note-preview {
   font-size: 0.9rem;
   line-height: 1.4;
-  color: rgba(0, 0, 0, 0.8);
-  margin-bottom: 1rem;
+  color: #555;
+  margin-bottom: 0;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   line-clamp: 3;
@@ -50,11 +73,8 @@
 }
 
 .tags-container {
-  margin-bottom: 1rem;
-
-  mat-chip-set {
-    margin: 0;
-  }
+  margin-top: 1rem;
+  margin-bottom: 0;
 
   .tag-chip {
     font-size: 0.75rem;
@@ -62,7 +82,8 @@
     margin-right: 0.5rem;
     margin-bottom: 0.25rem;
     background-color: #e3f2fd;
-    color: #1976d2;
+    color: #1565c0;
+    border: 1px solid rgba(21, 101, 192, 0.2);
   }
 }
 
@@ -71,10 +92,12 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  padding-top: 0.5rem;
 
   .created-date {
     font-size: 0.75rem;
-    color: rgba(0, 0, 0, 0.5);
+    color: #999;
   }
 
   .action-buttons {
@@ -84,31 +107,21 @@
     button {
       width: 32px;
       height: 32px;
-      line-height: 32px;
+      border-radius: 50%;
+
+      &:hover {
+        background-color: rgba(21, 101, 192, 0.1);
+      }
+
+      &[color="warn"]:hover {
+        background-color: rgba(244, 67, 54, 0.1);
+      }
 
       mat-icon {
-        font-size: 18px;
-        width: 18px;
-        height: 18px;
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
       }
-    }
-  }
-}
-
-@media (max-width: 768px) {
-  .note-metadata {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-  }
-
-  .card-actions {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-
-    .action-buttons {
-      align-self: flex-end;
     }
   }
 }

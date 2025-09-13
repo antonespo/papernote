@@ -39,16 +39,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   title = 'papernote-ui';
 
-  ngOnInit(): void {
-    this.router.events
-      .pipe(
-        filter((event) => event instanceof NavigationEnd),
-        takeUntil(this.destroy$)
-      )
-      .subscribe((event: NavigationEnd) => {
-        this.currentRoute.set(event.url);
-      });
-
+  constructor() {
     effect(() => {
       const isAuthenticated = this.isAuthenticated();
       const currentUrl = this.currentRoute();
@@ -64,6 +55,17 @@ export class AppComponent implements OnInit, OnDestroy {
         }, 0);
       }
     });
+  }
+
+  ngOnInit(): void {
+    this.router.events
+      .pipe(
+        filter((event) => event instanceof NavigationEnd),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((event: NavigationEnd) => {
+        this.currentRoute.set(event.url);
+      });
   }
 
   ngOnDestroy(): void {
