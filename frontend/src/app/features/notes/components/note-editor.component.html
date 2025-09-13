@@ -59,9 +59,10 @@
           </h2>
         </div>
         <div class="readonly-field">
-          <div class="readonly-content">
-            {{ noteForm.get("content")?.value || "No content available" }}
-          </div>
+          <div
+            class="readonly-content"
+            [innerHTML]="readOnlyContent() | trustHtml"
+          ></div>
         </div>
         } @else {
         <mat-form-field class="full-width" appearance="outline">
@@ -86,16 +87,40 @@
           <textarea
             matInput
             formControlName="content"
-            placeholder="Write your note content here..."
+            placeholder="Write your note content here... (URLs will be automatically converted to links)"
             rows="10"
           ></textarea>
+          <mat-hint>Supported: http:// and https:// links</mat-hint>
           @if (noteForm.get('content')?.errors?.['required']) {
           <mat-error>Content is required</mat-error>
           } @if (noteForm.get('content')?.errors?.['minlength']) {
           <mat-error>Content must be at least 10 characters</mat-error>
           }
         </mat-form-field>
-        }
+
+        <div class="preview-controls">
+          <button
+            mat-button
+            type="button"
+            (click)="showPreview.set(!showPreview())"
+            class="preview-toggle"
+          >
+            <mat-icon>{{
+              showPreview() ? "visibility_off" : "visibility"
+            }}</mat-icon>
+            {{ showPreview() ? "Hide Preview" : "Show Preview" }}
+          </button>
+        </div>
+
+        @if (showPreview()) {
+        <div class="preview-panel">
+          <h4>Preview</h4>
+          <div
+            class="preview-content"
+            [innerHTML]="contentPreview() | trustHtml"
+          ></div>
+        </div>
+        } }
       </mat-card-content>
     </mat-card>
 

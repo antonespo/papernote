@@ -134,6 +134,22 @@
   background-color: #f8f9fa;
   border-radius: 4px;
   border: 1px solid #e9ecef;
+
+  :global(.note-link) {
+    color: #1976d2;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: all 0.2s ease;
+
+    &:hover {
+      color: #1565c0;
+      border-bottom-color: #1565c0;
+    }
+
+    &:visited {
+      color: #7b1fa2;
+    }
+  }
 }
 
 .readonly-tags,
@@ -203,6 +219,60 @@
       &:hover {
         opacity: 1;
         background-color: rgba(21, 101, 192, 0.1);
+      }
+    }
+  }
+}
+
+.preview-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin: 1rem 0;
+
+  .preview-toggle {
+    color: #1565c0;
+    border: 1px solid #1565c0;
+    border-radius: 4px;
+
+    &:hover {
+      background-color: rgba(21, 101, 192, 0.1);
+    }
+  }
+}
+
+.preview-panel {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: white;
+
+  h4 {
+    margin: 0 0 0.75rem 0;
+    color: #1565c0;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .preview-content {
+    line-height: 1.6;
+    color: #333;
+    white-space: pre-wrap;
+    word-break: break-word;
+
+    :global(.note-link) {
+      color: #1976d2;
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: all 0.2s ease;
+
+      &:hover {
+        color: #1565c0;
+        border-bottom-color: #1565c0;
+      }
+
+      &:visited {
+        color: #7b1fa2;
       }
     }
   }

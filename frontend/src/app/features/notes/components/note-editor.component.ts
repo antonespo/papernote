@@ -34,6 +34,8 @@ import { NotesService } from '../services/notes.service';
 import { NoteFormData, NoteFormState } from '../models/note-form.model';
 import { NoteDto, CreateNoteDto, UpdateNoteDto } from '../../../api/notes';
 import { extractErrorMessage } from '../../../shared/utils/error.utils';
+import { HyperlinkService } from '../../../shared/services/hyperlink.service';
+import { TrustHtmlPipe } from '../../../shared/pipes/trust-html.pipe';
 import {
   ConfirmDialogComponent,
   ConfirmDialogData,
@@ -61,6 +63,7 @@ interface NoteForm {
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatDialogModule,
+    TrustHtmlPipe,
   ],
   templateUrl: './note-editor.component.html',
   styleUrl: './note-editor.component.scss',
@@ -70,6 +73,7 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly notesService = inject(NotesService);
+  private readonly hyperlinkService = inject(HyperlinkService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialog = inject(MatDialog);
   private readonly destroy$ = new Subject<void>();
@@ -107,6 +111,24 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
       !state.isSaving && state.isDirty && state.isValid && !this.isReadOnly()
     );
   });
+
+  readonly contentPreview = computed(() => {
+    const content = this.formContent();
+    return this.hyperlinkService.convertTextToHtml(content);
+  });
+
+  readonly readOnlyContent = computed(() => {
+    const content = this.formContent();
+
+    if (!content || content.trim() === '') {
+      return 'No content available';
+    }
+
+    return this.hyperlinkService.convertTextToHtml(content);
+  });
+
+  readonly showPreview = signal(false);
+  readonly formContent = signal<string>('');
 
   constructor() {
     this.noteForm = this.formBuilder.group<NoteForm>({
@@ -151,6 +173,8 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     this.noteForm.valueChanges
       .pipe(debounceTime(300), takeUntil(this.destroy$))
       .subscribe(() => {
+        const content = this.noteForm.get('content')?.value || '';
+        this.formContent.set(content);
         this.updateFormState();
       });
 
@@ -238,6 +262,8 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
       title: note.title || '',
       content: note.content || '',
     });
+
+    this.formContent.set(note.content || '');
 
     const tags = note.tags || [];
     const sharedWith = note.sharedWithUsernames || [];

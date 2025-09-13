@@ -10,9 +10,7 @@
   </mat-card-header>
 
   <mat-card-content>
-    <p class="note-preview">
-      {{ note.contentPreview || "No content available" }}
-    </p>
+    <div class="note-preview" [innerHTML]="contentWithLinks | trustHtml"></div>
 
     @if (note.tags && note.tags.length > 0) {
     <div class="tags-container">

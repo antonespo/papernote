@@ -11,6 +11,8 @@ import { Router } from '@angular/router';
 import { NoteSummaryDto } from '../../../api/notes';
 import { NotesService } from '../services/notes.service';
 import { extractErrorMessage } from '../../../shared/utils/error.utils';
+import { HyperlinkService } from '../../../shared/services/hyperlink.service';
+import { TrustHtmlPipe } from '../../../shared/pipes/trust-html.pipe';
 import {
   ConfirmDialogComponent,
   ConfirmDialogData,
@@ -26,6 +28,7 @@ import {
     MatIconModule,
     MatButtonModule,
     MatTooltipModule,
+    TrustHtmlPipe,
   ],
   templateUrl: './note-card.component.html',
   styleUrl: './note-card.component.scss',
@@ -33,12 +36,18 @@ import {
 export class NoteCardComponent {
   private readonly router = inject(Router);
   private readonly notesService = inject(NotesService);
+  private readonly hyperlinkService = inject(HyperlinkService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialog = inject(MatDialog);
 
   @Input({ required: true }) note!: NoteSummaryDto;
   @Input() isOwned: boolean = true;
   @Output() noteDeleted = new EventEmitter<string>();
+
+  get contentWithLinks(): string {
+    if (!this.note?.contentPreview) return '';
+    return this.hyperlinkService.convertTextToHtml(this.note.contentPreview);
+  }
 
   onNoteClick(): void {
     if (this.isOwned) {
