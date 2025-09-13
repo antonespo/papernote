@@ -7,6 +7,7 @@ using Papernote.Auth.Core.Application.Interfaces;
 using Papernote.Auth.Core.Domain.Entities;
 using Papernote.Auth.Core.Domain.Interfaces;
 using Papernote.SharedMicroservices.Results;
+using Papernote.SharedMicroservices.Cache;
 
 namespace Papernote.Auth.Infrastructure.Services;
 
@@ -17,6 +18,8 @@ public class AuthService : IAuthService
     private readonly IPasswordHasher _passwordHasher;
     private readonly IPasswordValidator _passwordValidator;
     private readonly IJwtTokenService _jwtTokenService;
+    private readonly IAdvancedCacheService _cacheService;
+    private readonly IAuthCacheKeyStrategy _cacheKeyStrategy;
     private readonly IMapper _mapper;
     private readonly ILogger<AuthService> _logger;
     private readonly AuthSettings _authSettings;
@@ -27,6 +30,8 @@ public class AuthService : IAuthService
         IPasswordHasher passwordHasher,
         IPasswordValidator passwordValidator,
         IJwtTokenService jwtTokenService,
+        IAdvancedCacheService cacheService,
+        IAuthCacheKeyStrategy cacheKeyStrategy,
         IMapper mapper,
         ILogger<AuthService> logger,
         IOptions<AuthSettings> authSettings)
@@ -36,6 +41,8 @@ public class AuthService : IAuthService
         _passwordHasher = passwordHasher;
         _passwordValidator = passwordValidator;
         _jwtTokenService = jwtTokenService;
+        _cacheService = cacheService;
+        _cacheKeyStrategy = cacheKeyStrategy;
         _mapper = mapper;
         _logger = logger;
         _authSettings = authSettings.Value;
@@ -48,30 +55,24 @@ public class AuthService : IAuthService
 
         try
         {
-            // Validate password policy
             if (!_passwordValidator.IsValidPassword(registerDto.Password, _authSettings.PasswordSettings))
             {
                 var errorMessage = _passwordValidator.GetValidationErrorMessage(registerDto.Password, _authSettings.PasswordSettings);
                 return ResultBuilder.ValidationError<AuthResponseDto>(errorMessage);
             }
 
-            // Check if username already exists
             if (await _userRepository.UsernameExistsAsync(registerDto.Username, cancellationToken))
             {
                 _logger.LogWarning("Registration attempt with existing username: {Username}", registerDto.Username);
                 return ResultBuilder.Conflict<AuthResponseDto>("Username already exists");
             }
 
-            // Hash password
             var passwordHash = _passwordHasher.HashPassword(registerDto.Password);
 
-            // Create user entity
             var user = new User(registerDto.Username, passwordHash);
 
-            // Save to database
             var createdUser = await _userRepository.CreateAsync(user, cancellationToken);
 
-            // Generate tokens
             var authResponse = await GenerateAuthResponseAsync(createdUser, cancellationToken);
 
             _logger.LogInformation("User registered successfully: {UserId}", createdUser.Id);
@@ -91,7 +92,6 @@ public class AuthService : IAuthService
 
         try
         {
-            // Find user by username
             var user = await _userRepository.GetByUsernameAsync(loginDto.Username, cancellationToken);
             if (user == null)
             {
@@ -99,18 +99,15 @@ public class AuthService : IAuthService
                 return ResultBuilder.Unauthorized<AuthResponseDto>("Invalid credentials");
             }
 
-            // Verify password
             if (!_passwordHasher.VerifyPassword(loginDto.Password, user.PasswordHash))
             {
                 _logger.LogWarning("Invalid password attempt for user: {UserId}", user.Id);
                 return ResultBuilder.Unauthorized<AuthResponseDto>("Invalid credentials");
             }
 
-            // Update last login
             user.RecordLogin();
             await _userRepository.UpdateAsync(user, cancellationToken);
 
-            // Generate tokens
             var authResponse = await GenerateAuthResponseAsync(user, cancellationToken);
 
             _logger.LogInformation("User logged in successfully: {UserId}", user.Id);
@@ -170,16 +167,25 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<Result> LogoutAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<Result> LogoutAsync(Guid userId, string accessToken, CancellationToken cancellationToken = default)
     {
         if (userId == Guid.Empty)
             return ResultBuilder.BadRequest("Invalid user ID");
+
+        if (string.IsNullOrWhiteSpace(accessToken))
+            return ResultBuilder.BadRequest("Access token is required");
 
         try
         {
             await _refreshTokenRepository.RevokeAllUserTokensAsync(userId, cancellationToken);
 
-            _logger.LogInformation("User logged out successfully: {UserId}", userId);
+            var jti = _jwtTokenService.ExtractJtiFromToken(accessToken);
+            if (!string.IsNullOrEmpty(jti))
+            {
+                await AddTokenToBlacklistAsync(jti, userId, accessToken, cancellationToken);
+            }
+
+            _logger.LogInformation("User logged out: {UserId}", userId);
             return ResultBuilder.Success();
         }
         catch (Exception ex)
@@ -189,22 +195,26 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<Result> RevokeAllTokensAsync(Guid userId, CancellationToken cancellationToken = default)
+    private async Task AddTokenToBlacklistAsync(string jti, Guid userId, string accessToken, CancellationToken cancellationToken)
     {
-        if (userId == Guid.Empty)
-            return ResultBuilder.BadRequest("Invalid user ID");
-
         try
         {
-            await _refreshTokenRepository.RevokeAllUserTokensAsync(userId, cancellationToken);
+            var tokenExpiration = _jwtTokenService.GetTokenExpiration(accessToken);
+            if (tokenExpiration.HasValue && tokenExpiration.Value > DateTime.UtcNow)
+            {
+                var cacheKey = _cacheKeyStrategy.GetRevokedTokenKey(jti);
+                var timeToLive = tokenExpiration.Value - DateTime.UtcNow;
 
-            _logger.LogInformation("All tokens revoked for user: {UserId}", userId);
-            return ResultBuilder.Success();
+                var revokedTokenInfo = new { UserId = userId, RevokedAt = DateTime.UtcNow };
+                await _cacheService.SetAsync(cacheKey, revokedTokenInfo, timeToLive, cancellationToken);
+
+                _logger.LogDebug("Token blacklisted: {JTI}", jti);
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error revoking all tokens for user: {UserId}", userId);
-            return ResultBuilder.InternalServerError("Token revocation failed");
+            _logger.LogError(ex, "Error blacklisting token: {JTI}", jti);
+            throw;
         }
     }
 

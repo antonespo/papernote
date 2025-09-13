@@ -8,4 +8,6 @@ public interface IJwtTokenService
     string GenerateRefreshToken();
     string HashRefreshToken(string refreshToken);
     bool ValidateAccessToken(string token);
+    string? ExtractJtiFromToken(string token);
+    DateTime? GetTokenExpiration(string token);
 }

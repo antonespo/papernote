@@ -40,7 +40,6 @@ public static class DependencyInjection
 
         services.AddScoped<INoteRepository, NoteRepository>();
         services.AddScoped<INoteService, NoteService>();
-        services.AddScoped<INoteSharingService, NoteSharingService>();
 
         return services;
     }

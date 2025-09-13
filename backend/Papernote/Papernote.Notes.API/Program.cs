@@ -4,11 +4,12 @@ using Microsoft.IdentityModel.Tokens;
 using Papernote.Notes.Core.Application.Mappings;
 using Papernote.Notes.Infrastructure;
 using Papernote.Notes.Infrastructure.Extensions;
+using Papernote.Notes.Infrastructure.Middleware;
+using System.Reflection;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Disabilita il mapping automatico dei claim JWT (mantiene "sub" invece di mapparlo a ClaimTypes.NameIdentifier)
 Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 // Add services to the container.
@@ -16,6 +17,18 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Version = "v1",
+        Title = "PaperNote Notes API",
+        Description = "RESTful API for managing notes, tags and sharing functionality in the PaperNote application",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        {
+            Name = "Antonio Esposito",
+            Url = new Uri("https://github.com/antonespo/papernote")
+        }
+    });
+
     options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -23,7 +36,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "Enter JWT Bearer token"
+        Description = "Enter JWT Bearer token obtained from the Auth API"
     });
 
     options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
@@ -40,6 +53,16 @@ builder.Services.AddSwaggerGen(options =>
             Array.Empty<string>()
         }
     });
+
+    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
+
+    options.EnableAnnotations();
+    options.OrderActionsBy(apiDesc => $"{apiDesc.ActionDescriptor.RouteValues["controller"]}_{apiDesc.HttpMethod}");
 });
 
 var jwtSigningKey = builder.Configuration["Jwt:SigningKey"]
@@ -86,7 +109,12 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "PaperNote Notes API v1");
+        options.RoutePrefix = "swagger";
+        options.DocumentTitle = "PaperNote Notes API";
+    });
 }
 
 app.MapHealthChecks("/health/live");
@@ -96,6 +124,7 @@ app.MapHealthChecks("/health");
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
+app.UseTokenBlacklist();
 app.UseAuthorization();
 
 app.MapControllers();

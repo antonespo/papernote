@@ -20,6 +20,9 @@ public class AuthCacheKeyStrategy : IAuthCacheKeyStrategy, IAdvancedCacheKeyStra
     public string GetRateLimitKey(string username)
         => GetVersionedKey("ratelimit", "login", username.ToLowerInvariant());
 
+    public string GetRevokedTokenKey(string jti)
+        => GetVersionedKey("token", "revoked", jti);
+
     public string GetPatternKey(string operation, string wildcard = "*")
         => $"{ServicePrefix}:{Version}:{operation}:{wildcard}";
 
