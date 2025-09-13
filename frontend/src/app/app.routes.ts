@@ -1,3 +1,44 @@
 import { Routes } from '@angular/router';
+import { authGuard, guestGuard } from './core/guards/auth.guard';
 
-export const routes: Routes = [];
+export const routes: Routes = [
+  {
+    path: '',
+    redirectTo: '/notes',
+    pathMatch: 'full',
+  },
+  {
+    path: 'auth',
+    canActivate: [guestGuard],
+    children: [
+      {
+        path: '',
+        redirectTo: 'login',
+        pathMatch: 'full',
+      },
+      {
+        path: 'login',
+        loadComponent: () =>
+          import('./features/auth/components/login.component').then(
+            (m) => m.LoginComponent
+          ),
+      },
+      {
+        path: 'register',
+        loadComponent: () =>
+          import('./features/auth/components/register.component').then(
+            (m) => m.RegisterComponent
+          ),
+      },
+    ],
+  },
+  {
+    path: 'notes',
+    canActivate: [authGuard],
+    children: [],
+  },
+  {
+    path: '**',
+    redirectTo: '/notes',
+  },
+];

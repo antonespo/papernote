@@ -1,3 +1,5 @@
+using System.Reflection;
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
@@ -5,8 +7,7 @@ using Papernote.Notes.Core.Application.Mappings;
 using Papernote.Notes.Infrastructure;
 using Papernote.Notes.Infrastructure.Extensions;
 using Papernote.Notes.Infrastructure.Middleware;
-using System.Reflection;
-using System.Text;
+using Papernote.SharedMicroservices.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,18 +40,15 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Enter JWT Bearer token obtained from the Auth API"
     });
 
-    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-    {
+    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement {
         {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-            {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme {
+                    Reference = new Microsoft.OpenApi.Models.OpenApiReference {
+                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                    }
+                },
+                Array.Empty<string> ()
         }
     });
 
@@ -65,8 +63,8 @@ builder.Services.AddSwaggerGen(options =>
     options.OrderActionsBy(apiDesc => $"{apiDesc.ActionDescriptor.RouteValues["controller"]}_{apiDesc.HttpMethod}");
 });
 
-var jwtSigningKey = builder.Configuration["Jwt:SigningKey"]
-    ?? throw new InvalidOperationException("Jwt:SigningKey configuration is required");
+var jwtSigningKey = builder.Configuration["Jwt:SigningKey"] ??
+    throw new InvalidOperationException("Jwt:SigningKey configuration is required");
 
 var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey));
 
@@ -88,10 +86,54 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+builder.Services.Configure<CorsSettings>(
+    builder.Configuration.GetSection(CorsSettings.SectionName));
+
+var corsSettings = builder.Configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>() ??
+    throw new InvalidOperationException("CORS configuration is required.");
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(corsSettings.PolicyName, policy =>
+    {
+        if (corsSettings.AllowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(corsSettings.AllowedOrigins);
+        }
+        else
+        {
+            policy.AllowAnyOrigin();
+        }
+
+        if (corsSettings.AllowedMethods.Length > 0 && corsSettings.AllowedMethods[0] == "*")
+        {
+            policy.AllowAnyMethod();
+        }
+        else if (corsSettings.AllowedMethods.Length > 0)
+        {
+            policy.WithMethods(corsSettings.AllowedMethods);
+        }
+
+        if (corsSettings.AllowedHeaders.Length > 0 && corsSettings.AllowedHeaders[0] == "*")
+        {
+            policy.AllowAnyHeader();
+        }
+        else if (corsSettings.AllowedHeaders.Length > 0)
+        {
+            policy.WithHeaders(corsSettings.AllowedHeaders);
+        }
+
+        if (corsSettings.AllowCredentials)
+        {
+            policy.AllowCredentials();
+        }
+    });
+});
+
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<NoteMappingProfile>());
 
-var connectionString = builder.Configuration.GetConnectionString("NotesDatabase")
-    ?? throw new InvalidOperationException("Connection string 'NotesDatabase' not found in configuration.");
+var connectionString = builder.Configuration.GetConnectionString("NotesDatabase") ??
+    throw new InvalidOperationException("Connection string 'NotesDatabase' not found in configuration.");
 
 builder.Services.AddNotesInfrastructure(connectionString);
 builder.Services.AddNotesAuthentication(builder.Configuration);
@@ -122,6 +164,8 @@ app.MapHealthChecks("/health/ready");
 app.MapHealthChecks("/health");
 
 app.UseHttpsRedirection();
+
+app.UseCors(corsSettings.PolicyName);
 
 app.UseAuthentication();
 app.UseTokenBlacklist();

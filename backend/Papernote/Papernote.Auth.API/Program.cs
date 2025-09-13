@@ -7,6 +7,7 @@ using Papernote.Auth.Core.Application.Mappings;
 using Papernote.Auth.Infrastructure;
 using Papernote.Auth.Infrastructure.Extensions;
 using Papernote.SharedMicroservices.Cache;
+using Papernote.SharedMicroservices.Configuration;
 using System.Reflection;
 using System.Text;
 
@@ -72,6 +73,50 @@ builder.Services.Configure<AuthSettings>(
     builder.Configuration.GetSection(AuthSettings.SectionName));
 builder.Services.Configure<RateLimitSettings>(
     builder.Configuration.GetSection(RateLimitSettings.SectionName));
+builder.Services.Configure<CorsSettings>(
+    builder.Configuration.GetSection(CorsSettings.SectionName));
+
+var corsSettings = builder.Configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>()
+    ?? throw new InvalidOperationException("CORS configuration is required.");
+
+// CORS Configuration
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(corsSettings.PolicyName, policy =>
+    {
+        if (corsSettings.AllowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(corsSettings.AllowedOrigins);
+        }
+        else
+        {
+            policy.AllowAnyOrigin();
+        }
+
+        if (corsSettings.AllowedMethods.Length > 0 && corsSettings.AllowedMethods[0] == "*")
+        {
+            policy.AllowAnyMethod();
+        }
+        else if (corsSettings.AllowedMethods.Length > 0)
+        {
+            policy.WithMethods(corsSettings.AllowedMethods);
+        }
+
+        if (corsSettings.AllowedHeaders.Length > 0 && corsSettings.AllowedHeaders[0] == "*")
+        {
+            policy.AllowAnyHeader();
+        }
+        else if (corsSettings.AllowedHeaders.Length > 0)
+        {
+            policy.WithHeaders(corsSettings.AllowedHeaders);
+        }
+
+        if (corsSettings.AllowCredentials)
+        {
+            policy.AllowCredentials();
+        }
+    });
+});
 
 // Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -137,6 +182,8 @@ app.MapHealthChecks("/health/ready");
 app.MapHealthChecks("/health");
 
 app.UseHttpsRedirection();
+
+app.UseCors(corsSettings.PolicyName);
 
 app.UseAuthentication();
 app.UseAuthorization();
