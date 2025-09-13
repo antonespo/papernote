@@ -6,7 +6,8 @@ namespace Papernote.Notes.Core.Application.DTOs;
 public record CreateNoteDto(
     string Title,
     string Content,
-    List<string>? Tags = null
+    List<string>? Tags = null,
+    List<string>? SharedWithUsernames = null
 );
 
 /// <summary>
@@ -16,7 +17,8 @@ public record UpdateNoteDto(
     Guid Id,
     string Title,
     string Content,
-    List<string>? Tags = null
+    List<string>? Tags = null,
+    List<string>? SharedWithUsernames = null
 );
 
 /// <summary>

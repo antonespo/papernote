@@ -17,9 +17,6 @@ public class NoteMappingProfile : Profile
             .ForMember(dest => dest.ContentPreview, opt => opt.MapFrom(src => CreatePreview(src.Content)))
             .ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.NoteTags.Select(nt => nt.TagName).ToList()))
             .ForMember(dest => dest.OwnerUsername, opt => opt.Ignore());
-
-        CreateMap<NoteShare, NoteShareDto>()
-            .ForMember(dest => dest.SharedAt, opt => opt.MapFrom(src => src.SharedAt));
     }
 
     private static string CreatePreview(string content)

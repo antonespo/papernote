@@ -16,5 +16,4 @@ public interface INoteRepository
     Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> CanUserReadNoteAsync(Guid noteId, Guid userId, CancellationToken cancellationToken = default);
     Task<bool> CanUserWriteNoteAsync(Guid noteId, Guid userId, CancellationToken cancellationToken = default);
-    Task<IEnumerable<NoteShare>> GetNoteSharesAsync(Guid noteId, CancellationToken cancellationToken = default);
 }

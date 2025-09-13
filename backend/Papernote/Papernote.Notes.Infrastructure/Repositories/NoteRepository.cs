@@ -136,13 +136,4 @@ public class NoteRepository : INoteRepository
         return await _context.Notes
             .AnyAsync(n => n.Id == noteId && n.OwnerUserId == userId, cancellationToken);
     }
-
-    public async Task<IEnumerable<NoteShare>> GetNoteSharesAsync(Guid noteId, CancellationToken cancellationToken = default)
-    {
-        return await _context.NoteShares
-            .Where(ns => ns.NoteId == noteId)
-            .AsNoTracking()
-            .OrderBy(ns => ns.SharedAt)
-            .ToListAsync(cancellationToken);
-    }
 }

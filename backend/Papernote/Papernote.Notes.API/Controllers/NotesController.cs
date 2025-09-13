@@ -12,12 +12,10 @@ namespace Papernote.Notes.API.Controllers;
 public class NotesController : ApiControllerBase
 {
     private readonly INoteService _noteService;
-    private readonly INoteSharingService _noteSharingService;
 
-    public NotesController(INoteService noteService, INoteSharingService noteSharingService)
+    public NotesController(INoteService noteService)
     {
         _noteService = noteService;
-        _noteSharingService = noteSharingService;
     }
 
     [HttpGet("{id:guid}")]
@@ -114,39 +112,6 @@ public class NotesController : ApiControllerBase
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var result = await _noteService.DeleteNoteAsync(id, cancellationToken);
-        return result.ToActionResult();
-    }
-
-    [HttpPost("{id:guid}/share")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> AddShare(Guid id, [FromBody] AddNoteShareRequest request, CancellationToken cancellationToken)
-    {
-        var validationError = this.ValidateModelState();
-        if (validationError != null)
-            return validationError.ToActionResult();
-
-        var result = await _noteSharingService.AddNoteShareAsync(id, request, cancellationToken);
-        return result.ToActionResult();
-    }
-
-    [HttpDelete("{id:guid}/share")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> RemoveShare(Guid id, [FromBody] RemoveNoteShareRequest request, CancellationToken cancellationToken)
-    {
-        var validationError = this.ValidateModelState();
-        if (validationError != null)
-            return validationError.ToActionResult();
-
-        var result = await _noteSharingService.RemoveNoteShareAsync(id, request, cancellationToken);
         return result.ToActionResult();
     }
 }

@@ -112,6 +112,13 @@ public class NoteService : INoteService
             var currentUserId = _currentUserService.GetCurrentUserId();
             var note = new Note(createNoteDto.Title, createNoteDto.Content, currentUserId, createNoteDto.Tags);
 
+            if (createNoteDto.SharedWithUsernames?.Any() == true)
+            {
+                var shareResult = await AddSharesToNote(note, createNoteDto.SharedWithUsernames, cancellationToken);
+                if (!shareResult.IsSuccess)
+                    return shareResult;
+            }
+
             var created = await _noteRepository.CreateAsync(note, cancellationToken);
             var noteDto = await MapNoteToDto(created, cancellationToken);
 
@@ -160,6 +167,13 @@ public class NoteService : INoteService
             if (updateNoteDto.Tags != null)
             {
                 note.UpdateTags(updateNoteDto.Tags);
+            }
+
+            if (updateNoteDto.SharedWithUsernames != null)
+            {
+                var shareResult = await UpdateNoteShares(note, updateNoteDto.SharedWithUsernames, cancellationToken);
+                if (!shareResult.IsSuccess)
+                    return shareResult;
             }
 
             var updated = await _noteRepository.UpdateAsync(note, cancellationToken);
@@ -247,5 +261,98 @@ public class NoteService : INoteService
                 : "Unknown";
             return summaryDto;
         });
+    }
+
+    private async Task<Result<NoteDto>> AddSharesToNote(Note note, List<string> sharedWithUsernames, CancellationToken cancellationToken)
+    {
+        var currentUserId = _currentUserService.GetCurrentUserId();
+        var currentUsername = await _userResolutionService.ResolveIdToUsernameAsync(currentUserId, cancellationToken);
+
+        var filteredUsernames = sharedWithUsernames
+            .Where(username => !string.Equals(username, currentUsername, StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (!filteredUsernames.Any())
+            return ResultBuilder.Success<NoteDto>(null!);
+
+        var resolutionRequest = new ResolveUsernamesToIdsRequest(filteredUsernames);
+        var resolutionResponse = await _userResolutionService.ResolveUsernamesToIdsAsync(resolutionRequest, cancellationToken);
+
+        foreach (var resolvedUser in resolutionResponse.UserResolutions)
+        {
+            try
+            {
+                note.ShareWith(resolvedUser.Value);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Cannot share note with user {Username}", resolvedUser.Key);
+            }
+        }
+
+        var unresolvedUsernames = filteredUsernames.Except(resolutionResponse.UserResolutions.Keys, StringComparer.OrdinalIgnoreCase).ToList();
+        if (unresolvedUsernames.Any())
+        {
+            return ResultBuilder.ValidationError<NoteDto>($"Users not found: {string.Join(", ", unresolvedUsernames)}");
+        }
+
+        return ResultBuilder.Success<NoteDto>(null!);
+    }
+
+    private async Task<Result<NoteDto>> UpdateNoteShares(Note note, List<string> sharedWithUsernames, CancellationToken cancellationToken)
+    {
+        var currentUserId = _currentUserService.GetCurrentUserId();
+        var currentUsername = await _userResolutionService.ResolveIdToUsernameAsync(currentUserId, cancellationToken);
+
+        var filteredUsernames = sharedWithUsernames
+            .Where(username => !string.Equals(username, currentUsername, StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var currentlySharedUserIds = note.GetSharedUserIds().ToHashSet();
+        var currentSharesRequest = new ResolveIdsToUsernamesRequest(currentlySharedUserIds);
+        var currentSharesResponse = await _userResolutionService.ResolveIdsToUsernamesAsync(currentSharesRequest, cancellationToken);
+        var currentlySharedUsernames = currentSharesResponse.UserResolutions.Values.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var usersToAdd = filteredUsernames.Except(currentlySharedUsernames, StringComparer.OrdinalIgnoreCase).ToList();
+        var usersToRemove = currentlySharedUsernames.Except(filteredUsernames, StringComparer.OrdinalIgnoreCase).ToList();
+
+        if (usersToAdd.Any())
+        {
+            var addResolutionRequest = new ResolveUsernamesToIdsRequest(usersToAdd);
+            var addResolutionResponse = await _userResolutionService.ResolveUsernamesToIdsAsync(addResolutionRequest, cancellationToken);
+
+            foreach (var resolvedUser in addResolutionResponse.UserResolutions)
+            {
+                try
+                {
+                    note.ShareWith(resolvedUser.Value);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    _logger.LogWarning(ex, "Cannot share note with user {Username}", resolvedUser.Key);
+                }
+            }
+
+            var unresolvedUsernames = usersToAdd.Except(addResolutionResponse.UserResolutions.Keys, StringComparer.OrdinalIgnoreCase).ToList();
+            if (unresolvedUsernames.Any())
+            {
+                return ResultBuilder.ValidationError<NoteDto>($"Users not found: {string.Join(", ", unresolvedUsernames)}");
+            }
+        }
+
+        if (usersToRemove.Any())
+        {
+            var removeResolutionRequest = new ResolveUsernamesToIdsRequest(usersToRemove);
+            var removeResolutionResponse = await _userResolutionService.ResolveUsernamesToIdsAsync(removeResolutionRequest, cancellationToken);
+
+            foreach (var resolvedUser in removeResolutionResponse.UserResolutions)
+            {
+                note.RemoveShare(resolvedUser.Value);
+            }
+        }
+
+        return ResultBuilder.Success<NoteDto>(null!);
     }
 }
