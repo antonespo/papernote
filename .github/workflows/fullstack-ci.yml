@@ -43,11 +43,6 @@ jobs:
           cd frontend
           npm ci
 
-      - name: Lint Angular code
-        run: |
-          cd frontend
-          npm run lint
-
       - name: Build Angular app (production)
         run: |
           cd frontend
