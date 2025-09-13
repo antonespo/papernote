@@ -7,6 +7,7 @@ using Papernote.Auth.Core.Application.Mappings;
 using Papernote.Auth.Infrastructure;
 using Papernote.Auth.Infrastructure.Extensions;
 using Papernote.SharedMicroservices.Cache;
+using System.Reflection;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +19,18 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Version = "v1",
+        Title = "PaperNote Auth API",
+        Description = "Authentication and user management API for the PaperNote application supporting JWT tokens, user registration, login and internal user resolution services",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        {
+            Name = "Antonio Esposito",
+            Url = new Uri("https://github.com/antonespo/papernote")
+        }
+    });
+
     options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -25,7 +38,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "Enter JWT Bearer token"
+        Description = "Enter JWT Bearer token for authenticated endpoints"
     });
 
     options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
@@ -42,6 +55,16 @@ builder.Services.AddSwaggerGen(options =>
             Array.Empty<string>()
         }
     });
+
+    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
+
+    options.EnableAnnotations();
+    options.OrderActionsBy(apiDesc => $"{apiDesc.ActionDescriptor.RouteValues["controller"]}_{apiDesc.HttpMethod}");
 });
 
 // Configuration
@@ -56,7 +79,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
         var serviceProvider = builder.Services.BuildServiceProvider();
         var authSettings = serviceProvider.GetRequiredService<IOptions<AuthSettings>>().Value;
-        
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -101,7 +124,12 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "PaperNote Auth API v1");
+        options.RoutePrefix = "swagger";
+        options.DocumentTitle = "PaperNote Auth API";
+    });
 }
 
 app.MapHealthChecks("/health/live");
