@@ -1,23 +1,26 @@
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Papernote.Gateway.HealthChecks;
 using Papernote.SharedMicroservices.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add YARP
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
-// Add CORS configuration
 builder.Services.Configure<CorsSettings>(
     builder.Configuration.GetSection(CorsSettings.SectionName));
 
 builder.Services.AddCors();
 
-// Add health checks
-builder.Services.AddHealthChecks();
+builder.Services.AddHttpClient();
+
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy("Gateway is running"))
+    .AddTypeActivatedCheck<AuthServiceHealthCheck>("auth-service")
+    .AddTypeActivatedCheck<NotesServiceHealthCheck>("notes-service");
 
 var app = builder.Build();
 
-// Configure CORS
 var corsSettings = app.Configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>();
 if (corsSettings?.AllowedOrigins?.Length > 0)
 {
@@ -28,7 +31,6 @@ if (corsSettings?.AllowedOrigins?.Length > 0)
         .AllowCredentials());
 }
 
-// Security Headers
 app.Use(async (context, next) =>
 {
     context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
@@ -46,10 +48,8 @@ app.Use(async (context, next) =>
     await next();
 });
 
-// Map YARP routes
 app.MapReverseProxy();
 
-// Health checks
 app.MapHealthChecks("/health");
 
 app.Run();

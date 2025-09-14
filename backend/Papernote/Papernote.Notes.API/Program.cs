@@ -3,10 +3,12 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
+using Papernote.Notes.API.HealthChecks;
 using Papernote.Notes.Core.Application.Mappings;
 using Papernote.Notes.Infrastructure;
 using Papernote.Notes.Infrastructure.Extensions;
 using Papernote.Notes.Infrastructure.Middleware;
+using Papernote.SharedMicroservices.Cache;
 using Papernote.SharedMicroservices.Configuration;
 using Papernote.SharedMicroservices.Security;
 
@@ -100,8 +102,20 @@ builder.Services.AddInternalApiSecurity();
 builder.Services.AddCacheServices(builder.Configuration);
 builder.Services.AddCachedNoteService();
 
+var notesConnectionString = builder.Configuration.GetConnectionString("NotesDatabase")
+    ?? throw new InvalidOperationException("Connection string 'NotesDatabase' not found in configuration.");
+
+var redisConnectionString = CacheConfiguration.ValidateRedisConnectionString(
+    builder.Configuration.GetConnectionString("Redis"),
+    "Notes Health Check");
+
+builder.Services.AddHttpClient();
+
 builder.Services.AddHealthChecks()
-    .AddCheck("self", () => HealthCheckResult.Healthy("Notes API is running"));
+    .AddCheck("self", () => HealthCheckResult.Healthy("Notes API is running"))
+    .AddNpgSql(notesConnectionString, name: "notes-database")
+    .AddRedis(redisConnectionString, name: "notes-redis")
+    .AddTypeActivatedCheck<AuthServiceHealthCheck>("auth-service");
 
 var app = builder.Build();
 
@@ -116,8 +130,6 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.MapHealthChecks("/health/live");
-app.MapHealthChecks("/health/ready");
 app.MapHealthChecks("/health");
 
 app.UseHttpsRedirection();

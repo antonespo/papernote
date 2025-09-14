@@ -128,8 +128,6 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.MapHealthChecks("/health/live");
-app.MapHealthChecks("/health/ready");
 app.MapHealthChecks("/health");
 
 app.UseHttpsRedirection();
