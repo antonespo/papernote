@@ -73,8 +73,6 @@ services:
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__AuthDatabase: Host=postgres-ci;Port=5432;Database=papernote_auth;Username=papernote_ci_user;Password=ci_password
       ConnectionStrings__Redis: redis-ci:6379
-      Auth__JwtSettings__PrivateKey: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcEFJQkFBS0NBUUVBdGVzdA==
-      Auth__JwtSettings__PublicKey: LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUE=
       Auth__JwtSettings__Issuer: papernote-auth-ci
       Auth__JwtSettings__Audience: papernote-api-ci
     ports:
@@ -103,7 +101,6 @@ services:
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__NotesDatabase: Host=postgres-ci;Port=5432;Database=papernote_notes;Username=papernote_ci_user;Password=ci_password
       ConnectionStrings__Redis: redis-ci:6379
-      Jwt__PublicKey: LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUE=
       Jwt__Issuer: papernote-auth-ci
       Jwt__Audience: papernote-api-ci
       AuthService__ApiKey: ci_test_api_key
