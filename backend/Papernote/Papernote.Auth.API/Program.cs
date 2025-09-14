@@ -72,36 +72,6 @@ builder.Services.Configure<AuthSettings>(
     builder.Configuration.GetSection(AuthSettings.SectionName));
 builder.Services.Configure<RateLimitSettings>(
     builder.Configuration.GetSection(RateLimitSettings.SectionName));
-builder.Services.Configure<CorsSettings>(
-    builder.Configuration.GetSection(CorsSettings.SectionName));
-
-var corsSettings = builder.Configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>()
-    ?? new CorsSettings { PolicyName = "DefaultCorsPolicy" };
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(corsSettings.PolicyName, policy =>
-    {
-        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
-        
-        if (allowedOrigins.Length > 0)
-        {
-            policy.WithOrigins(allowedOrigins);
-        }
-        else if (builder.Environment.IsDevelopment())
-        {
-            policy.AllowAnyOrigin();
-        }
-
-        policy.AllowAnyMethod()
-              .AllowAnyHeader();
-
-        if (allowedOrigins.Length > 0 && !allowedOrigins.Contains("*"))
-        {
-            policy.AllowCredentials();
-        }
-    });
-});
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -163,8 +133,6 @@ app.MapHealthChecks("/health/ready");
 app.MapHealthChecks("/health");
 
 app.UseHttpsRedirection();
-
-app.UseCors(corsSettings.PolicyName);
 
 app.UseInternalApiSecurity();
 

@@ -34,6 +34,31 @@ services:
       start_period: 10s
     restart: unless-stopped
 
+  # API Gateway (Entry Point)
+  gateway:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5005
+      - DOTNET_USE_POLLING_FILE_WATCHER=true
+      - DOTNET_WATCH_RESTART_ON_RUDE_EDIT=true
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      # Override gateway destinations for docker
+      - ReverseProxy__Clusters__auth-cluster__Destinations__destination1__Address=http://auth-service:8080
+      - ReverseProxy__Clusters__notes-cluster__Destinations__destination1__Address=http://notes-service:8080
+    ports:
+      - "5005:5005"
+    volumes:
+      - ./backend/Papernote:/src:rw
+    working_dir: /src/Papernote.Gateway
+    command: ["dotnet", "run", "--urls", "http://+:5005"]
+    depends_on:
+      auth-service:
+        condition: service_started
+      notes-service:
+        condition: service_started
+    restart: unless-stopped
+
   # Auth Service
   auth-service:
     image: mcr.microsoft.com/dotnet/sdk:8.0
@@ -58,8 +83,6 @@ services:
       - Auth__PasswordSettings__RequireUppercase=true
       - Auth__PasswordSettings__RequireLowercase=true
       - Auth__PasswordSettings__RequireNonAlphanumeric=false
-      # CORS Configuration
-      - CORS__AllowedOrigins=http://localhost:4200,http://localhost:3000
     ports:
       - "5003:8080"
     volumes:
@@ -90,8 +113,6 @@ services:
       # Auth Service Communication
       - AuthService__ApiKey=notes-service-secure-api-key-dev-xxxxxxxxxxxxxxx
       - AuthService__BaseUrl=http://auth-service:8080
-      # CORS Configuration
-      - CORS__AllowedOrigins=http://localhost:4200,http://localhost:3000
     ports:
       - "5004:8080"
     volumes:
