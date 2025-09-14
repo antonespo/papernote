@@ -2,7 +2,113 @@
 
 PaperNote è un'applicazione web per creare, gestire e condividere note testuali con altri utenti, con funzioni di ricerca e organizzazione tramite tag.
 
-## Esecuzione in Locale
+## Architettura e Componenti Principali
+
+PaperNote implementa un'architettura a microservizi per garantire scalabilità e manutenibilità.
+
+### Schema Architetturale
+
+```
+    [Utente Browser]
+           |
+    [Frontend Angular SPA]
+           | HTTPS
+    [API Gateway YARP]
+         /         \
+   [Auth Service]  [Notes Service]
+        |                   |
+[PostgreSQL Auth]  [PostgreSQL Notes]
+        |                   |
+        └─ [Redis Cache] ───┘
+```
+
+### Panoramica del Sistema
+
+Il sistema funziona con questo flusso:
+
+1. **Frontend Angular** - Interfaccia utente single-page application
+2. **Gateway YARP** - Entry point che inoltra le richieste
+3. **Auth Service** - Gestisce registrazione, login e JWT tokens
+4. **Notes Service** - Gestisce CRUD note, condivisione e ricerca FTS
+5. **Database separati** - Ogni servizio ha il proprio PostgreSQL database
+6. **Redis** - Cache condivisa per performance e sessioni
+
+### Microservizi
+
+#### **API Gateway (YARP)**
+
+- **Ruolo**: Entry point unico per sicurezza e routing
+- **Tecnologie**: .NET 8, YARP Reverse Proxy
+- **Funzionalità**: HTTPS termination, CORS, security headers
+
+#### **Auth Service**
+
+- **Ruolo**: Gestione utenti e autenticazione
+- **Database**: PostgreSQL (`papernote_auth`)
+- **Funzionalità**: Register/login, JWT tokens, password hashing Argon2id
+- **API**: Pubbliche (auth) + interne (risoluzione username per Notes)
+
+#### **Notes Service**
+
+- **Ruolo**: Gestione note collaborative
+- **Database**: PostgreSQL (`papernote_notes`)
+- **Funzionalità**: CRUD note, condivisione, tag, full-text search
+- **Sicurezza**: Tutti endpoint protetti da JWT Bearer
+
+### Database e Cache
+
+#### **SQL Database: PostgreSQL (2 database separati)**
+
+- **`papernote_auth`**: Utenti, credenziali, refresh tokens
+- **`papernote_notes`**: Note, condivisioni, tag
+- **Full-Text Search**: PostgresSQL tsvector e indici GIN per ricerche testuali veloci
+- **Vantaggi**: Isolamento dati, scaling indipendente, autonomia servizi
+
+#### **NoSQL Database: Redis Cache**
+
+- **Note Cache**: Cache singole note e liste per performance (anche dei risultati di ricerca)
+- **Rate Limiting**: Protezione tentativi login (non per IP ma per username)
+- **Token Blacklist**: JWT revocati per logout immediato (jti blacklist)
+- **User Resolution**: Cache username <=> UserID per comunicazione inter-service
+
+### Clean Architecture
+
+Ogni microservizio usa Clean Architecture con 3 layer:
+
+```
+┌─────────────────┐
+│   API Layer     │  Controllers, Middleware
+├─────────────────┤
+│Infrastructure   │  Database, Cache, HTTP
+├─────────────────┤
+│  Core/Domain    │  Business Logic, Entities
+└─────────────────┘
+```
+
+**Benefici**: Testabilità, manutenibilità, indipendenza da framework esterni.
+
+### Frontend (Angular 18)
+
+- **Architettura**: SPA con lazy loading modules
+- **API Client**: Autogenerato da specifiche OpenAPI backend
+- **Sicurezza**: JWT interceptor, route guards, type safety TypeScript
+- **Struttura**: Core (guards), Features (auth/notes), Shared (components)
+
+### Sicurezza
+
+#### Autenticazione
+
+- **JWT**: HMAC-SHA256 tokens con refresh rotation
+- **Password**: Hashing Argon2id con salt
+- **Sessions**: Blacklist JTI per logout immediato
+
+#### Gateway Security
+
+- **HTTPS**: Enforcement con security headers
+- **CORS**: Configurazione restrictive per origins
+- **Headers**: CSP, X-Frame-Options, HSTS
+
+## Eseguire App in Locale
 
 ### Prerequisiti
 
@@ -147,11 +253,6 @@ npm start
 | `/{id}`  | PUT    | JWT Bearer     | Modifica nota esistente                                   |
 | `/{id}`  | DELETE | JWT Bearer     | Eliminazione nota                                         |
 
-#### Autenticazione
-
-- **JWT Bearer**: `Authorization: Bearer <jwt_token>`
-- **Internal Service**: `X-Internal-ApiKey: <service_key>`
-
 ### Documentazione API Completa con Swagger
 
 | Servizio      | Swagger UI Locale       | Swagger UI Docker      |
@@ -171,50 +272,53 @@ Nella cartella `/postman` sono disponibili:
 
 Per utilizzare: importa la collezione e l'environment appropriato in Postman, quindi esegui lo scenario "Setup - Scenario Completo" per popolare automaticamente il sistema con dati di test.
 
-## Approccio DevOps e CI/CD
+## Miglioramenti Futuri
 
-Il sistema utilizza una struttura DevOps con pipeline separate per diversi ambienti e scopi.
+Roadmap di evoluzione per trasformare PaperNote in una soluzione enterprise-grade.
 
-### Pipeline Disponibili (GitHub Actions)
+### Robustezza API e UX
 
-#### 0. Fullstack CI (fullstack-ci.yml)
+- **Input Validation**: Schema validation rigorosa con FluentValidation
+- **Hyperlink Validation**: Validazione esistenza e sicurezza link esterni
+- **Optimistic Locking**: Gestione conflitti edit simultaneo note con ETag/versioning
+- **Real-time Updates**: SignalR per notifiche modifiche in tempo reale
+- **Paginazione Infinita**: Infinite scroll per migliorare UX su liste lunghe
+- **Cache Resilienza**: Redis è comune ad auth e notes, graceful degradation se Redis non disponibile
 
-- **Scopo**: Validazione di base e build completo del sistema
-- **Trigger**: Ogni push o pull_request verso main nei percorsi specificati (backend, frontend ..)
-- **Fasi**: Build di tutte le componenti
+### Testing e Quality Engineering
 
-#### 1. CI Pipeline (ci.yml)
+- **Unit Tests**: Coverage >90% per business logic
+- **Integration Tests**: API testing con database reale
+- **End-to-End Tests**: Playwright per user journey completi
+- **Performance Tests**: Load testing con K6 o NBomber
+- **Static Analysis**: SonarQube per code quality metrics
+- **Dependency Scanning**: Automated vulnerability assessment
 
-- **Scopo**: Validazione completa del codice
-- **Trigger**: Manuale (workflow_dispatch) TODO: qualsiasi push o ogni pull_request verso main nei percorsi specificati
+### Monitoring e Osservabilità
 
-- **Fasi**:
-  - Lint backend (.NET) e frontend (Angular)
-  - Security scanning (CodeQL SAST, Trivy filesystem)
-  - Dependency vulnerability check (.NET packages, npm audit)
-  - Build backend e frontend
-  - Unit tests con coverage
-  - Integration tests con Docker Compose
-  - Quality gate validation
-  - Publish artifacts su GitHub Container Registry
+- **Distributed Tracing**: OpenTelemetry completo con Jaeger
+- **Metrics Collection**: Prometheus + Grafana dashboards
+- **Error Tracking**: Sentry per exception monitoring
+- **Performance KPIs**: Response time, throughput, error rates
 
-#### 2. Test Deployment (deploy-test.yml)
+### Sicurezza Enterprise
 
-- **Scopo**: Deploy automatico su ambiente di test (CD)
-- **Trigger**: Manuale (workflow_dispatch)
-- **Ambiente**: Test persistente con volumi Docker
-- **Validazione**: Health checks post-deployment
+- **OAuth2/OIDC**: Integration con identity providers (Azure AD, Google)
+- **Certificate Management**: Automated cert rotation
+- **Secrets Management**: Azure Key Vault per gestione credenziali
+- **Role-Based Access Control**: Ruoli e permessi granulari
+- **Audit Logging**: Compliance tracking per azioni sensibili
+- **API Rate Limiting**: Advanced throttling per endpoint specifici
+- **Network Security**: VNet isolation, private endpoints
 
-#### 3. Production Deployment (deploy-prod.yml)
+### Deployment Cloud-Native (possibile architettura)
 
-- **Scopo**: Deploy produzione con approvazione manuale
-- **Trigger**: Manuale con parametri di input
-- **Strategia**: Blue-green deployment
-- **Funzionalità**: Backup automatico, rollback, digest pinning
-
-### Ambienti Docker
-
-- **Development**: docker/compose.dev.yml (attualmente in uso)
-- **CI**: docker/compose.ci.yml
-- **Test**: docker/compose.test.yml
-- **Production**: docker/compose.prod.yml
+- **Container Apps**: Serverless containers con auto-scaling
+- **Azure Database**: PostgreSQL Flexible Server con backup automatici
+- **Redis Cache**: Azure Cache for Redis con clustering
+- **API Management**: Centralized API gateway con policies
+- **Infrastructure as Code**: Terraform per automation e versioning
+- **Feature Flags**: Deployment graduale nuove funzionalità
+- **Blue-Green Deployment**: Zero-downtime deployments
+- **Canary Releases**: Gradual rollout con monitoring automatico
+- **Disaster Recovery**: Cross-region backup e failover
