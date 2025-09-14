@@ -55,6 +55,7 @@ Il sistema utilizza una struttura DevOps con pipeline separate per diversi ambie
 ### Prerequisiti
 
 - .NET 8 SDK (https://dotnet.microsoft.com/it-it/download/dotnet/8.0)
+- Entity Framework Core CLI: `dotnet tool install --global dotnet-ef`
 - Node.js v20.19.5 (https://nodejs.org/en/download)
 - Docker
 - PostgreSQL 16 (opzionale, fornito via Docker)

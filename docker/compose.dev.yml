@@ -91,7 +91,12 @@ services:
     volumes:
       - ../backend/Papernote:/src:rw
     working_dir: /src/Papernote.Auth.API
-    command: ["dotnet", "run", "--urls", "http://+:8080"]
+    command:
+      [
+        "sh",
+        "-c",
+        "dotnet ef database update && dotnet run --urls http://+:8080",
+      ]
     depends_on:
       postgres:
         condition: service_healthy
@@ -121,7 +126,12 @@ services:
     volumes:
       - ../backend/Papernote:/src:rw
     working_dir: /src/Papernote.Notes.API
-    command: ["dotnet", "run", "--urls", "http://+:8080"]
+    command:
+      [
+        "sh",
+        "-c",
+        "dotnet ef database update && dotnet run --urls http://+:8080",
+      ]
     depends_on:
       postgres:
         condition: service_healthy
