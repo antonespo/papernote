@@ -63,6 +63,7 @@ jobs:
           - Papernote.Auth.API
           - Papernote.Auth.Core
           - Papernote.Auth.Infrastructure
+          - Papernote.Gateway
           - Papernote.Notes.API
           - Papernote.Notes.Core
           - Papernote.Notes.Infrastructure
@@ -125,6 +126,7 @@ jobs:
         service:
           - auth-service
           - notes-service
+          - gateway-service
           - frontend
 
     steps:
@@ -139,7 +141,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./backend/Papernote
-          file: ./backend/Papernote/Papernote.${{ matrix.service == 'auth-service' && 'Auth.API' || 'Notes.API' }}/Dockerfile
+          file: ./backend/Papernote/Papernote.${{ matrix.service == 'auth-service' && 'Auth.API' || matrix.service == 'notes-service' && 'Notes.API' || 'Gateway' }}/Dockerfile
           push: false
           tags: papernote-${{ matrix.service }}:ci-${{ github.sha }}
           cache-from: type=gha
