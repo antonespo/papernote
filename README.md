@@ -6,12 +6,18 @@ PaperNote è un'applicazione web per creare, gestire e condividere note testuali
 
 ### Prerequisiti
 
+#### Per esecuzione con Docker (Raccomandato)
+
+- **Docker** e **Docker Compose**
+
+#### Per esecuzione manuale (senza Docker)
+
 - .NET 8 SDK (https://dotnet.microsoft.com/it-it/download/dotnet/8.0)
-- Entity Framework Core CLI (solo per esecuzione manuale - per db migrations): `dotnet tool install --global dotnet-ef`
+- Entity Framework Core CLI (per db migrations): `dotnet tool install --global dotnet-ef`
 - Node.js v20.19.5 (https://nodejs.org/en/download)
 - Docker
-- PostgreSQL 16 (opzionale, fornito via Docker)
-- Redis 7 (opzionale, fornito via Docker)
+- PostgreSQL 16 (tramite Docker)
+- Redis 7 (tramite Docker)
 
 ### Installazione e Setup
 
@@ -124,36 +130,46 @@ npm start
 
 **Internal APIs** (comunicazione tra microservizi):
 
-| Endpoint                                      | Method | Autenticazione            | Descrizione                   |
-| --------------------------------------------- | ------ | ------------------------- | ----------------------------- |
-| `/api/internal/users/resolve/batch/usernames` | POST   | X-Internal-Service header | Risoluzione username → UserID |
-| `/api/internal/users/resolve/batch/userids`   | POST   | X-Internal-Service header | Risoluzione UserID → username |
+| Endpoint                                      | Method | Autenticazione           | Descrizione                    |
+| --------------------------------------------- | ------ | ------------------------ | ------------------------------ |
+| `/api/internal/users/resolve/batch/usernames` | POST   | X-Internal-ApiKey header | Risoluzione username => UserID |
+| `/api/internal/users/resolve/batch/userids`   | POST   | X-Internal-ApiKey header | Risoluzione UserID => username |
 
 #### Notes Service
 
 **Base URL**: https://localhost:7002/api/v1/notes (locale) | http://localhost:5004/api/v1/notes (Docker)
 
-| Endpoint | Method | Autenticazione | Descrizione                                                         |
-| -------- | ------ | -------------- | ------------------------------------------------------------------- |
-| `/`      | GET    | JWT Bearer     | Lista note con filtri opzionali (owned/shared, ricerca testo, tags) |
-| `/`      | POST   | JWT Bearer     | Creazione nuova nota                                                |
-| `/{id}`  | GET    | JWT Bearer     | Dettaglio nota specifica                                            |
-| `/{id}`  | PUT    | JWT Bearer     | Modifica nota esistente                                             |
-| `/{id}`  | DELETE | JWT Bearer     | Eliminazione nota                                                   |
+| Endpoint | Method | Autenticazione | Descrizione                                               |
+| -------- | ------ | -------------- | --------------------------------------------------------- |
+| `/`      | GET    | JWT Bearer     | Lista note con filtri (owned/shared, ricerca testo, tags) |
+| `/`      | POST   | JWT Bearer     | Creazione nuova nota                                      |
+| `/{id}`  | GET    | JWT Bearer     | Dettaglio nota specifica                                  |
+| `/{id}`  | PUT    | JWT Bearer     | Modifica nota esistente                                   |
+| `/{id}`  | DELETE | JWT Bearer     | Eliminazione nota                                         |
 
 #### Autenticazione
 
 - **JWT Bearer**: `Authorization: Bearer <jwt_token>`
-- **Internal Service**: `X-Internal-Service: <service_key>`
+- **Internal Service**: `X-Internal-ApiKey: <service_key>`
 
-### Documentazione API Completa
+### Documentazione API Completa con Swagger
 
-| Servizio      | Swagger UI Locale              | Swagger UI Docker             |
-| ------------- | ------------------------------ | ----------------------------- |
-| **Auth API**  | https://localhost:7001/swagger | http://localhost:5003/swagger |
-| **Notes API** | https://localhost:7002/swagger | http://localhost:5004/swagger |
+| Servizio      | Swagger UI Locale       | Swagger UI Docker      |
+| ------------- | ----------------------- | ---------------------- |
+| **Auth API**  | https://localhost:7001/ | http://localhost:5003/ |
+| **Notes API** | https://localhost:7002/ | http://localhost:5004/ |
 
 **Specifiche OpenAPI**: Disponibili in `/api-specs/auth-api.json` e `/api-specs/notes-api.json`
+
+## Testing con Postman
+
+Nella cartella `/postman` sono disponibili:
+
+- **`PaperNote.API.postman_collection.json`**: Collezione completa con tutti gli endpoint e scenario di test automatizzato (3 utenti, 13 note con condivisioni)
+- **`PaperNote.Docker.postman_environment.json`**: Environment per setup Docker (HTTP, porte 5003-5005)
+- **`PaperNote.Local.postman_environment.json`**: Environment per esecuzione locale (HTTPS, porte 7000-7002)
+
+Per utilizzare: importa la collezione e l'environment appropriato in Postman, quindi esegui lo scenario "Setup - Scenario Completo" per popolare automaticamente il sistema con dati di test.
 
 ## Approccio DevOps e CI/CD
 
