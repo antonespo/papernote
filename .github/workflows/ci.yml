@@ -1,0 +1,247 @@
+name: CI Pipeline
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: ["**"]
+  #   paths:
+  #     - "backend/**"
+  #     - "frontend/**"
+  #     - ".github/workflows/ci.yml"
+  #     - "docker/**"
+  # pull_request:
+  #   branches: [main]
+  #   paths:
+  #     - "backend/**"
+  #     - "frontend/**"
+  #     - ".github/workflows/ci.yml"
+  #     - "docker/**"
+
+env:
+  DOTNET_VERSION: "8.0.x"
+  NODE_VERSION: "18.x"
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  lint-backend:
+    name: Lint .NET
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - run: dotnet restore backend/Papernote/Papernote.sln
+      - run: dotnet format backend/Papernote/Papernote.sln --verify-no-changes --verbosity normal
+
+  lint-frontend:
+    name: Lint Angular
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: cd frontend && npm ci
+      - run: cd frontend && npm run lint
+      - run: cd frontend && npm run prettier:check
+
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: csharp,javascript
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - run: dotnet restore backend/Papernote/Papernote.sln
+      - run: dotnet build backend/Papernote/Papernote.sln --no-restore --configuration Release
+
+      - uses: github/codeql-action/analyze@v3
+
+      - uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-results.sarif
+
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+
+  dependency-check:
+    name: Dependency Vulnerabilities
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: dotnet restore backend/Papernote/Papernote.sln
+      - run: dotnet list backend/Papernote package --vulnerable --include-transitive
+
+      - run: cd frontend && npm ci
+      - run: cd frontend && npm audit --audit-level high
+
+      - run: cd frontend && npx better-npm-audit audit --level high
+
+  build-backend:
+    name: Build .NET
+    runs-on: ubuntu-latest
+    needs: [lint-backend, security-scan, dependency-check]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - run: dotnet restore backend/Papernote/Papernote.sln
+      - run: dotnet build backend/Papernote/Papernote.sln --no-restore --configuration Release
+
+  build-frontend:
+    name: Build Angular
+    runs-on: ubuntu-latest
+    needs: [lint-frontend, dependency-check]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: cd frontend && npm ci
+      - run: cd frontend && npm run build
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: dotnet restore backend/Papernote/Papernote.sln
+      - run: dotnet test backend/Papernote/Papernote.sln --configuration Release --collect:"XPlat Code Coverage" --results-directory ./coverage
+      - run: cd frontend && npm ci
+      - run: cd frontend && npm run test:ci
+      - uses: actions/upload-artifact@v4
+        with:
+          name: test-coverage
+          path: |
+            coverage/
+            frontend/coverage/
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - run: docker compose -f docker/compose.ci.yml build
+      - run: docker compose -f docker/compose.ci.yml up -d --wait --wait-timeout 300
+      - run: |
+          timeout 60 bash -c 'until curl -f http://localhost:5000/health; do sleep 2; done'
+          timeout 60 bash -c 'until curl -f http://localhost:5001/health; do sleep 2; done'
+          timeout 60 bash -c 'until curl -f http://localhost:5002/health; do sleep 2; done'
+
+      - run: |
+          curl -f http://localhost:5000/health | jq '.status'
+          curl -f http://localhost:5001/health | jq '.status'  
+          curl -f http://localhost:5002/health | jq '.status'
+
+      - run: docker compose -f docker/compose.ci.yml down -v
+
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    needs: [security-scan, dependency-check, unit-tests, integration-tests]
+    if: always()
+    steps:
+      - run: |
+          if [[ "${{ needs.security-scan.result }}" != "success" ]]; then
+            echo "Security scan failed"
+            exit 1
+          fi
+          if [[ "${{ needs.dependency-check.result }}" != "success" ]]; then
+            echo "Dependency check failed"
+            exit 1
+          fi
+          if [[ "${{ needs.unit-tests.result }}" != "success" ]]; then
+            echo "Unit tests failed"
+            exit 1
+          fi
+          if [[ "${{ needs.integration-tests.result }}" != "success" ]]; then
+            echo "Integration tests failed"
+            exit 1
+          fi
+          echo "All quality gates passed"
+
+  publish-artifacts:
+    name: Publish Artifacts
+    runs-on: ubuntu-latest
+    needs: quality-gate
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v5
+        with:
+          context: ./backend/Papernote
+          file: ./backend/Papernote/Papernote.Gateway/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/gateway:${{ github.sha }}
+      - uses: docker/build-push-action@v5
+        with:
+          context: ./backend/Papernote
+          file: ./backend/Papernote/Papernote.Auth.API/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/auth:${{ github.sha }}
+      - uses: docker/build-push-action@v5
+        with:
+          context: ./backend/Papernote
+          file: ./backend/Papernote/Papernote.Notes.API/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/notes:${{ github.sha }}
+      - uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}

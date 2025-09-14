@@ -1,0 +1,153 @@
+services:
+  postgres-ci:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: papernote_ci
+      POSTGRES_USER: papernote_ci_user
+      POSTGRES_PASSWORD: ci_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5432:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U papernote_ci_user -d papernote_ci"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  redis-ci:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    tmpfs:
+      - /data
+    command: redis-server --save "" --appendonly no --maxmemory 64mb
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  gateway:
+    build:
+      context: ../backend/Papernote
+      dockerfile: Papernote.Gateway/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Testing
+      ASPNETCORE_URLS: http://+:8080
+      ReverseProxy__Clusters__auth-cluster__Destinations__destination1__Address: http://auth:8080
+      ReverseProxy__Clusters__notes-cluster__Destinations__destination1__Address: http://notes:8080
+      Cors__AllowedOrigins__0: http://localhost:3000
+    ports:
+      - "5000:8080"
+    depends_on:
+      auth:
+        condition: service_healthy
+      notes:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  auth:
+    build:
+      context: ../backend/Papernote
+      dockerfile: Papernote.Auth.API/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Testing
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__AuthDatabase: Host=postgres-ci;Port=5432;Database=papernote_auth;Username=papernote_ci_user;Password=ci_password
+      ConnectionStrings__Redis: redis-ci:6379
+      Auth__JwtSettings__PrivateKey: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcEFJQkFBS0NBUUVBdGVzdA==
+      Auth__JwtSettings__PublicKey: LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUE=
+      Auth__JwtSettings__Issuer: papernote-auth-ci
+      Auth__JwtSettings__Audience: papernote-api-ci
+    ports:
+      - "5001:8080"
+    depends_on:
+      postgres-ci:
+        condition: service_healthy
+      redis-ci:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  notes:
+    build:
+      context: ../backend/Papernote
+      dockerfile: Papernote.Notes.API/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Testing
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__NotesDatabase: Host=postgres-ci;Port=5432;Database=papernote_notes;Username=papernote_ci_user;Password=ci_password
+      ConnectionStrings__Redis: redis-ci:6379
+      Jwt__PublicKey: LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUE=
+      Jwt__Issuer: papernote-auth-ci
+      Jwt__Audience: papernote-api-ci
+      AuthService__ApiKey: ci_test_api_key
+      AuthService__BaseUrl: http://auth:8080
+    ports:
+      - "5002:8080"
+    depends_on:
+      postgres-ci:
+        condition: service_healthy
+      redis-ci:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: test
+    ports:
+      - "3000:80"
+    depends_on:
+      gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+networks:
+  default:
+    driver: bridge
