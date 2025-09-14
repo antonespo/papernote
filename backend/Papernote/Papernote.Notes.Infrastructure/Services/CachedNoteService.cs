@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Papernote.Notes.Core.Application.DTOs;
 using Papernote.Notes.Core.Application.Interfaces;
+using Papernote.Notes.Core.Domain.Interfaces;
 using Papernote.SharedMicroservices.Results;
 
 namespace Papernote.Notes.Infrastructure.Services;
@@ -8,22 +9,28 @@ namespace Papernote.Notes.Infrastructure.Services;
 public class CachedNoteService : ICachedNoteService
 {
     private readonly INoteService _noteService;
+    private readonly INoteRepository _noteRepository;
     private readonly ICacheService _cacheService;
     private readonly INotesCacheKeyStrategy _keyStrategy;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ISharedNotesCacheInvalidationService _sharedCacheInvalidationService;
     private readonly ILogger<CachedNoteService> _logger;
 
     public CachedNoteService(
         INoteService noteService,
+        INoteRepository noteRepository,
         ICacheService cacheService,
         INotesCacheKeyStrategy keyStrategy,
         ICurrentUserService currentUserService,
+        ISharedNotesCacheInvalidationService sharedCacheInvalidationService,
         ILogger<CachedNoteService> logger)
     {
         _noteService = noteService;
+        _noteRepository = noteRepository;
         _cacheService = cacheService;
         _keyStrategy = keyStrategy;
         _currentUserService = currentUserService;
+        _sharedCacheInvalidationService = sharedCacheInvalidationService;
         _logger = logger;
     }
 
@@ -105,9 +112,22 @@ public class CachedNoteService : ICachedNoteService
     {
         var result = await _noteService.CreateNoteAsync(createNoteDto, cancellationToken);
 
-        if (result.IsSuccess)
+        if (result.IsSuccess && result.Value != null)
         {
             await InvalidateUserCachesAsync(cancellationToken);
+
+            if (createNoteDto.SharedWithUsernames?.Any() == true)
+            {
+                var createdNote = await _noteRepository.GetByIdWithTagsAndSharesAsync(
+                    result.Value.Id, cancellationToken);
+                
+                if (createdNote != null)
+                {
+                    await _sharedCacheInvalidationService.InvalidateSharedNotesCacheForNoteAsync(
+                        createdNote, cancellationToken);
+                }
+            }
+
             _logger.LogDebug("Invalidated caches after note creation");
         }
 
@@ -116,12 +136,30 @@ public class CachedNoteService : ICachedNoteService
 
     public async Task<Result<NoteDto>> UpdateNoteAsync(UpdateNoteDto updateNoteDto, CancellationToken cancellationToken = default)
     {
+        var oldNote = await _noteRepository.GetByIdWithTagsAndSharesAsync(
+            updateNoteDto.Id, cancellationToken);
+
         var result = await _noteService.UpdateNoteAsync(updateNoteDto, cancellationToken);
 
         if (result.IsSuccess)
         {
+            var updatedNote = await _noteRepository.GetByIdWithTagsAndSharesAsync(
+                updateNoteDto.Id, cancellationToken);
+
             await InvalidateNoteCacheAsync(updateNoteDto.Id, cancellationToken);
             await InvalidateUserCachesAsync(cancellationToken);
+
+            if (oldNote != null && updatedNote != null)
+            {
+                await _sharedCacheInvalidationService.InvalidateSharedNotesCacheForNoteUpdateAsync(
+                    oldNote, updatedNote, cancellationToken);
+            }
+            else if (updatedNote != null)
+            {
+                await _sharedCacheInvalidationService.InvalidateSharedNotesCacheForNoteAsync(
+                    updatedNote, cancellationToken);
+            }
+
             _logger.LogDebug("Invalidated caches after note update {NoteId}", updateNoteDto.Id);
         }
 
@@ -130,12 +168,21 @@ public class CachedNoteService : ICachedNoteService
 
     public async Task<Result> DeleteNoteAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        var noteToDelete = await _noteRepository.GetByIdWithTagsAndSharesAsync(id, cancellationToken);
+
         var result = await _noteService.DeleteNoteAsync(id, cancellationToken);
 
         if (result.IsSuccess)
         {
             await InvalidateNoteCacheAsync(id, cancellationToken);
             await InvalidateUserCachesAsync(cancellationToken);
+
+            if (noteToDelete != null)
+            {
+                await _sharedCacheInvalidationService.InvalidateSharedNotesCacheForNoteAsync(
+                    noteToDelete, cancellationToken);
+            }
+
             _logger.LogDebug("Invalidated caches after note deletion {NoteId}", id);
         }
 
