@@ -45,7 +45,74 @@ Il sistema utilizza una struttura DevOps con pipeline separate per diversi ambie
 
 ### Ambienti Docker
 
-- **Development**: docker-compose.dev.yml (attualmente in uso)
+- **Development**: docker/compose.dev.yml (attualmente in uso)
 - **CI**: docker/compose.ci.yml
 - **Test**: docker/compose.test.yml
 - **Production**: docker/compose.prod.yml
+
+## Sviluppo Locale
+
+### Prerequisiti
+
+- .NET 8 SDK (https://dotnet.microsoft.com/it-it/download/dotnet/8.0)
+- Node.js v20.19.5 (https://nodejs.org/en/download)
+- Docker
+- PostgreSQL 16 (opzionale, fornito via Docker)
+- Redis 7 (opzionale, fornito via Docker)
+
+### Installazione e Setup
+
+#### 1. Clone del Repository
+
+```bash
+git clone https://github.com/antonespo/papernote.git
+cd papernote
+```
+
+#### Opzione 1: Docker Compose (Raccomandato)
+
+Avvia tutto lo stack con un comando:
+
+```bash
+cd docker
+docker-compose -f compose.dev.yml up --build
+```
+
+#### Opzione 2: Esecuzione Manuale
+
+##### 1. Avvia Database e Cache
+
+```bash
+cd docker
+docker-compose -f compose.dev.yml up postgres redis -d
+```
+
+##### 2. Avvia Backend Services
+
+Terminal 1 - Auth Service:
+
+```bash
+cd backend/Papernote
+dotnet run --project Papernote.Auth.API --urls "https://localhost:7001"
+```
+
+Terminal 2 - Notes Service:
+
+```bash
+cd backend/Papernote
+dotnet run --project Papernote.Notes.API --urls "https://localhost:7002"
+```
+
+Terminal 3 - Gateway:
+
+```bash
+cd backend/Papernote
+dotnet run --project Papernote.Gateway --urls "https://localhost:7000"
+```
+
+##### 3. Avvia Frontend
+
+```bash
+cd frontend
+npm start
+```

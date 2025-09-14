@@ -52,7 +52,7 @@ services:
     ports:
       - "5005:5005"
     volumes:
-      - ./backend/Papernote:/src:rw
+      - ../backend/Papernote:/src:rw
     working_dir: /src/Papernote.Gateway
     command: ["dotnet", "run", "--urls", "http://+:5005"]
     depends_on:
@@ -89,7 +89,7 @@ services:
     ports:
       - "5003:8080"
     volumes:
-      - ./backend/Papernote:/src:rw
+      - ../backend/Papernote:/src:rw
     working_dir: /src/Papernote.Auth.API
     command: ["dotnet", "run", "--urls", "http://+:8080"]
     depends_on:
@@ -119,7 +119,7 @@ services:
     ports:
       - "5004:8080"
     volumes:
-      - ./backend/Papernote:/src:rw
+      - ../backend/Papernote:/src:rw
     working_dir: /src/Papernote.Notes.API
     command: ["dotnet", "run", "--urls", "http://+:8080"]
     depends_on:
@@ -141,7 +141,7 @@ services:
     ports:
       - "4200:4200"
     volumes:
-      - ./frontend:/app:rw
+      - ../frontend:/app:rw
       - /app/node_modules
     working_dir: /app
     command:
