@@ -64,7 +64,10 @@ services:
 
   # Auth Service
   auth-service:
-    image: mcr.microsoft.com/dotnet/sdk:8.0
+    build:
+      context: ../backend/Papernote
+      dockerfile: Papernote.Auth.API/Dockerfile
+      target: development
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
@@ -95,7 +98,7 @@ services:
       [
         "sh",
         "-c",
-        "dotnet ef database update && dotnet run --urls http://+:8080",
+        "dotnet ef database update --project ../Papernote.Auth.Infrastructure --startup-project . && dotnet run --urls http://+:8080",
       ]
     depends_on:
       postgres:
@@ -106,7 +109,10 @@ services:
 
   # Notes Service
   notes-service:
-    image: mcr.microsoft.com/dotnet/sdk:8.0
+    build:
+      context: ../backend/Papernote
+      dockerfile: Papernote.Notes.API/Dockerfile
+      target: development
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
@@ -130,7 +136,7 @@ services:
       [
         "sh",
         "-c",
-        "dotnet ef database update && dotnet run --urls http://+:8080",
+        "dotnet ef database update --project ../Papernote.Notes.Infrastructure --startup-project . && dotnet run --urls http://+:8080",
       ]
     depends_on:
       postgres:
