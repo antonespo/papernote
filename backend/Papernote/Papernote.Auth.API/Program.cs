@@ -8,6 +8,7 @@ using Papernote.Auth.Infrastructure;
 using Papernote.Auth.Infrastructure.Extensions;
 using Papernote.SharedMicroservices.Cache;
 using Papernote.SharedMicroservices.Configuration;
+using Papernote.SharedMicroservices.Security;
 using System.Reflection;
 using System.Text;
 
@@ -15,7 +16,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
-// Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -68,7 +68,6 @@ builder.Services.AddSwaggerGen(options =>
     options.OrderActionsBy(apiDesc => $"{apiDesc.ActionDescriptor.RouteValues["controller"]}_{apiDesc.HttpMethod}");
 });
 
-// Configuration
 builder.Services.Configure<AuthSettings>(
     builder.Configuration.GetSection(AuthSettings.SectionName));
 builder.Services.Configure<RateLimitSettings>(
@@ -77,48 +76,33 @@ builder.Services.Configure<CorsSettings>(
     builder.Configuration.GetSection(CorsSettings.SectionName));
 
 var corsSettings = builder.Configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>()
-    ?? throw new InvalidOperationException("CORS configuration is required.");
+    ?? new CorsSettings { PolicyName = "DefaultCorsPolicy" };
 
-// CORS Configuration
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(corsSettings.PolicyName, policy =>
     {
-        if (corsSettings.AllowedOrigins.Length > 0)
+        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+        
+        if (allowedOrigins.Length > 0)
         {
-            policy.WithOrigins(corsSettings.AllowedOrigins);
+            policy.WithOrigins(allowedOrigins);
         }
-        else
+        else if (builder.Environment.IsDevelopment())
         {
             policy.AllowAnyOrigin();
         }
 
-        if (corsSettings.AllowedMethods.Length > 0 && corsSettings.AllowedMethods[0] == "*")
-        {
-            policy.AllowAnyMethod();
-        }
-        else if (corsSettings.AllowedMethods.Length > 0)
-        {
-            policy.WithMethods(corsSettings.AllowedMethods);
-        }
+        policy.AllowAnyMethod()
+              .AllowAnyHeader();
 
-        if (corsSettings.AllowedHeaders.Length > 0 && corsSettings.AllowedHeaders[0] == "*")
-        {
-            policy.AllowAnyHeader();
-        }
-        else if (corsSettings.AllowedHeaders.Length > 0)
-        {
-            policy.WithHeaders(corsSettings.AllowedHeaders);
-        }
-
-        if (corsSettings.AllowCredentials)
+        if (allowedOrigins.Length > 0 && !allowedOrigins.Contains("*"))
         {
             policy.AllowCredentials();
         }
     });
 });
 
-// Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -140,20 +124,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// AutoMapper
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<AuthMappingProfile>());
 
-// Infrastructure services
 var connectionString = builder.Configuration.GetConnectionString("AuthDatabase")
     ?? throw new InvalidOperationException("Connection string 'AuthDatabase' not found in configuration.");
 
 builder.Services.AddAuthInfrastructure(connectionString);
 builder.Services.AddAuthCache(builder.Configuration);
 
-// Cached services
+builder.Services.AddInternalApiSecurity();
+
 builder.Services.AddCachedUserResolutionService();
 
-// Health checks
 var redisConnectionString = CacheConfiguration.ValidateRedisConnectionString(
     builder.Configuration.GetConnectionString("Redis"),
     "Auth Health Check");
@@ -165,14 +147,13 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "PaperNote Auth API v1");
-        options.RoutePrefix = "swagger";
+        options.RoutePrefix = string.Empty;
         options.DocumentTitle = "PaperNote Auth API";
     });
 }
@@ -184,6 +165,8 @@ app.MapHealthChecks("/health");
 app.UseHttpsRedirection();
 
 app.UseCors(corsSettings.PolicyName);
+
+app.UseInternalApiSecurity();
 
 app.UseAuthentication();
 app.UseAuthorization();

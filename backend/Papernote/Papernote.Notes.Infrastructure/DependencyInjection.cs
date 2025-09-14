@@ -8,6 +8,7 @@ using Papernote.Notes.Infrastructure.Persistence;
 using Papernote.Notes.Infrastructure.Repositories;
 using Papernote.Notes.Infrastructure.Services;
 using Papernote.SharedMicroservices.Database;
+using Papernote.SharedMicroservices.Http;
 using Polly;
 using Polly.Extensions.Http;
 using Refit;
@@ -61,12 +62,18 @@ public static class DependencyInjection
         var authServiceBaseUrl = configuration["AuthService:BaseUrl"]
             ?? throw new InvalidOperationException("AuthService:BaseUrl configuration is required");
 
+        var authServiceApiKey = configuration["AuthService:ApiKey"]
+            ?? throw new InvalidOperationException("AuthService:ApiKey configuration is required");
+
+        services.AddTransient(_ => new InternalApiKeyHandler(authServiceApiKey));
+
         services.AddRefitClient<IAuthServiceClient>()
             .ConfigureHttpClient(client =>
             {
                 client.BaseAddress = new Uri(authServiceBaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(30);
             })
+            .AddHttpMessageHandler<InternalApiKeyHandler>()
             .AddPolicyHandler(GetRetryPolicy())
             .AddPolicyHandler(GetCircuitBreakerPolicy());
 
