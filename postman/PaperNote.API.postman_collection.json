@@ -1,0 +1,1153 @@
+{
+  "info": {
+    "_postman_id": "papernote-api-collection",
+    "name": "PaperNote API - Complete Collection",
+    "description": "Collection completa per testare tutte le API di PaperNote con scenari di test automatizzati",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Setup - Scenario Completo",
+      "description": "Esecuzione automatica dello scenario completo: 3 utenti, 10+ note, condivisioni",
+      "item": [
+        {
+          "name": "1. Registra utente Pippo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains tokens', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.accessToken).to.not.be.empty;",
+                  "    pm.expect(responseJson.refreshToken).to.not.be.empty;",
+                  "    ",
+                  "    pm.environment.set('access_token_pippo', responseJson.accessToken);",
+                  "    pm.environment.set('refresh_token_pippo', responseJson.refreshToken);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"pippo\",\n  \"password\": \"Pippo123\"\n}"
+            },
+            "url": {
+              "raw": "{{auth_url}}/api/v1/auth/register",
+              "host": ["{{auth_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "2. Registra utente Pluto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains tokens', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.accessToken).to.not.be.empty;",
+                  "    pm.expect(responseJson.refreshToken).to.not.be.empty;",
+                  "    ",
+                  "    pm.environment.set('access_token_pluto', responseJson.accessToken);",
+                  "    pm.environment.set('refresh_token_pluto', responseJson.refreshToken);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"pluto\",\n  \"password\": \"Pluto123\"\n}"
+            },
+            "url": {
+              "raw": "{{auth_url}}/api/v1/auth/register",
+              "host": ["{{auth_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "3. Registra utente Paperino",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains tokens', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.accessToken).to.not.be.empty;",
+                  "    pm.expect(responseJson.refreshToken).to.not.be.empty;",
+                  "    ",
+                  "    pm.environment.set('access_token_paperino', responseJson.accessToken);",
+                  "    pm.environment.set('refresh_token_paperino', responseJson.refreshToken);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"paperino\",\n  \"password\": \"Paperino123\"\n}"
+            },
+            "url": {
+              "raw": "{{auth_url}}/api/v1/auth/register",
+              "host": ["{{auth_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "4. Pippo - Crea nota personale #1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Note created successfully', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.id).to.not.be.empty;",
+                  "    pm.environment.set('note_id_1', responseJson.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_pippo}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Appunti riunione progetto\",\n  \"content\": \"Oggi abbiamo discusso dell'architettura del nuovo sistema. Da rivedere:\\n\\n- Documentazione API su https://swagger.io/specification/\\n- Linee guida microservizi: https://microservices.io/patterns/\\n- Best practices per Docker: https://docs.docker.com/develop/best-practices/\\n\\nProssima riunione venerdì per definire i milestone.\",\n  \"tags\": [\"riunione\", \"architettura\", \"planning\"]\n}"
+            },
+            "url": {
+              "raw": "{{notes_url}}/api/v1/notes",
+              "host": ["{{notes_url}}"],
+              "path": ["api", "v1", "notes"]
+            }
+          }
+        },
+        {
+          "name": "5. Pippo - Crea nota condivisa con Pluto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Note created successfully', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.id).to.not.be.empty;",
+                  "    pm.environment.set('note_id_2', responseJson.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_pippo}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Sviluppo piattaforma e-commerce\",\n  \"content\": \"Progetto condiviso per lo sviluppo della nuova piattaforma. Risorse utili:\\n\\n- Repository GitHub: https://github.com/company/ecommerce-platform\\n- Design system: https://www.figma.com/design-system\\n- API documentation: https://api-docs.company.com\\n\\nTasks assegnati:\\n- Pippo: Backend APIs\\n- Pluto: Frontend components\\n\\nDeadline: fine mese\",\n  \"tags\": [\"ecommerce\", \"collaborazione\", \"sviluppo\"],\n  \"sharedWithUsernames\": [\"pluto\"]\n}"
+            },
+            "url": {
+              "raw": "{{notes_url}}/api/v1/notes",
+              "host": ["{{notes_url}}"],
+              "path": ["api", "v1", "notes"]
+            }
+          }
+        },
+        {
+          "name": "6. Pippo - Crea nota condivisa con tutti",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Note created successfully', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.id).to.not.be.empty;",
+                  "    pm.environment.set('note_id_3', responseJson.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_pippo}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Retrospettiva sprint e pianificazione\",\n  \"content\": \"Note dalla retrospettiva di team di oggi:\\n\\nCosa ha funzionato:\\n- Comunicazione migliorata\\n- Deploy automatizzati\\n- Code review efficaci\\n\\nDa migliorare:\\n- Testing coverage (target 80%)\\n- Documentazione API\\n\\nAzioni:\\n- Setup SonarQube: https://sonarqube.org/\\n- Migrazione a GitFlow: https://gitflow.nvie.com/\\n- Training su TDD: https://testdriven.io/\\n\\nProssimo sprint planning: mercoledì\",\n  \"tags\": [\"retrospettiva\", \"team\", \"sprint\"],\n  \"sharedWithUsernames\": [\"pluto\", \"paperino\"]\n}"
+            },
+            "url": {
+              "raw": "{{notes_url}}/api/v1/notes",
+              "host": ["{{notes_url}}"],
+              "path": ["api", "v1", "notes"]
+            }
+          }
+        },
+        {
+          "name": "7. Pluto - Crea nota personale #1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Note created successfully', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.id).to.not.be.empty;",
+                  "    pm.environment.set('note_id_4', responseJson.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_pluto}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Ottimizzazioni performance e monitoring\",\n  \"content\": \"Idee per migliorare le performance del sistema:\\n\\nDatabase:\\n- Implementare connection pooling\\n- Ottimizzare query con EXPLAIN ANALYZE\\n- Setup read replicas per scalabilità\\n\\nMonitoring:\\n- Grafana dashboards: https://grafana.com/grafana/dashboards/\\n- Prometheus metrics: https://prometheus.io/docs/practices/naming/\\n- Jaeger tracing: https://www.jaegertracing.io/\\n\\nCaching:\\n- Redis cluster setup\\n- CDN per assets statici\\n\\nTools da valutare:\\n- New Relic APM\\n- DataDog infrastructure monitoring\",\n  \"tags\": [\"performance\", \"monitoring\", \"ottimizzazione\"]\n}"
+            },
+            "url": {
+              "raw": "{{notes_url}}/api/v1/notes",
+              "host": ["{{notes_url}}"],
+              "path": ["api", "v1", "notes"]
+            }
+          }
+        },
+        {
+          "name": "8. Pluto - Crea nota condivisa con Paperino",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Note created successfully', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.id).to.not.be.empty;",
+                  "    pm.environment.set('note_id_5', responseJson.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_pluto}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Proof of Concept - Intelligenza Artificiale\",\n  \"content\": \"Esplorazione dell'integrazione AI nel nostro stack tecnologico:\\n\\nMachine Learning:\\n- TensorFlow per recommendation engine: https://tensorflow.org/recommenders\\n- Hugging Face per NLP: https://huggingface.co/models\\n- MLflow per model tracking: https://mlflow.org/\\n\\nInfrastruttura AI:\\n- Kubernetes AI operators: https://kubeflow.org/\\n- GPU cluster setup con NVIDIA: https://docs.nvidia.com/datacenter/cloud-native/\\n\\nUse Cases da valutare:\\n- Analisi sentiment dei feedback utenti\\n- Classificazione automatica contenuti\\n- Predizioni trend di utilizzo\\n\\nBudget stimato: €50k per POC di 3 mesi\\nTimeline: Q1 2025\",\n  \"tags\": [\"ai\", \"machine-learning\", \"poc\"],\n  \"sharedWithUsernames\": [\"paperino\"]\n}"
+            },
+            "url": {
+              "raw": "{{notes_url}}/api/v1/notes",
+              "host": ["{{notes_url}}"],
+              "path": ["api", "v1", "notes"]
+            }
+          }
+        },
+        {
+          "name": "9. Paperino - Crea nota personale #1",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_paperino}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Standard documentazione architetturale\",\n  \"content\": \"Linee guida per documentare l'architettura del sistema:\\n\\nArchitecture Decision Records (ADR):\\n- Template ADR: https://github.com/joelparkerhenderson/architecture-decision-record\\n- Tool per ADR: https://adr.github.io/\\n\\nAPI Documentation:\\n- OpenAPI 3.0 spec standard\\n- Swagger UI per interfacce interattive\\n- Postman collections per esempi\\n\\nDiagrammi architetturali:\\n- C4 Model: https://c4model.com/\\n- PlantUML per diagrammi as-code: https://plantuml.com/\\n- Draw.io per diagrammi collaborativi\\n\\nDocumentation as Code:\\n- GitBook per knowledge base\\n- Confluence per documentazione condivisa\\n- README templates per repository\",\n  \"tags\": [\"documentazione\", \"architettura\", \"standard\"]\n}"
+            },
+            "url": {
+              "raw": "{{notes_url}}/api/v1/notes",
+              "host": ["{{notes_url}}"],
+              "path": ["api", "v1", "notes"]
+            }
+          }
+        },
+        {
+          "name": "10. Paperino - Crea nota personale #2",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_paperino}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Checklist completa per code review\",\n  \"content\": \"Guida dettagliata per code review efficaci:\\n\\nFunzionalità\\n- Il codice implementa correttamente i requisiti?\\n- I casi edge sono gestiti?\\n- Error handling appropriato\\n\\nCode Style\\n- Rispetta le convention del team\\n- Naming chiaro e consistente\\n- SonarQube rules: https://rules.sonarsource.com/\\n\\nPerformance\\n- Algoritmi efficienti\\n- Query database ottimizzate\\n- Memory leaks prevention\\n\\nSecurity\\n- OWASP Top 10: https://owasp.org/www-project-top-ten/\\n- Input validation e sanitization\\n- Authentication/authorization corretta\\n\\nTests\\n- Unit tests coverage > 80%\\n- Integration tests per API\\n- Test pyramid rispettata\\n\\nDocumentation\\n- README aggiornato\\n- API docs sincronizzate\\n- Inline comments per logica complessa\",\n  \"tags\": [\"code-review\", \"qualità\", \"best-practices\"]\n}"
+            },
+            "url": {
+              "raw": "{{notes_url}}/api/v1/notes",
+              "host": ["{{notes_url}}"],
+              "path": ["api", "v1", "notes"]
+            }
+          }
+        },
+        {
+          "name": "11. Pippo - Crea nota con ricette",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_pippo}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Le mie ricette preferite\",\n  \"content\": \"Collezione delle ricette di famiglia che preparo più spesso:\\n\\nPasta al pomodoro della nonna\\n- Ingredienti freschi dal mercato\\n- Basilico del giardino\\n- Ricetta originale: https://ricette.giallozafferano.it/Pasta-al-pomodoro.html\\n\\nRisotto ai porcini\\n- Funghi porcini secchi ammollati\\n- Brodo vegetale fatto in casa\\n- Tecnica mantecatura perfetta\\n\\nTiramisù della domenica\\n- Savoiardi di Novara\\n- Caffè moka forte\\n- Mascarpone fresco\\n- Tutorial video: https://youtube.com/watch?v=tiramisu-recipe\\n\\nPizza margherita fatta in casa\\n- Lievitazione 24h in frigo\\n- Forno a 250°C con pietra refrattaria\\n- Mozzarella di bufala DOP\",\n  \"tags\": [\"ricette\", \"cucina\", \"famiglia\"]\n}"
+            },
+            "url": {
+              "raw": "{{notes_url}}/api/v1/notes",
+              "host": ["{{notes_url}}"],
+              "path": ["api", "v1", "notes"]
+            }
+          }
+        },
+        {
+          "name": "12. Pluto - Crea nota travel",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_pluto}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Viaggi avventura 2025 - Bucket List\",\n  \"content\": \"Le destinazioni dei miei sogni per il prossimo anno:\\n\\nGiappone - Marzo/Aprile\\n- Fioritura dei ciliegi (Sakura)\\n- Tokyo, Kyoto, Osaka\\n- Ryokan tradizionali\\n- Budget: €3500\\n- Guide: https://japan-guide.com/\\n\\nNorvegia - Giugno/Luglio\\n- Lofoten Islands\\n- Sole di mezzanotte\\n- Hiking e fjords\\n- Budget: €2800\\n- Info: https://visitnorway.com/\\n\\nPatagonia - Marzo 2025\\n- Torres del Paine, Cile\\n- El Calafate, Argentina\\n- Trekking W Circuit\\n- Budget: €4200\\n- Planning: https://patagonia-chile.com/\\n\\nNuova Zelanda - Luglio 2025\\n- Isola del Nord e del Sud\\n- Hobbiton e Milford Sound\\n- Road trip van 3 settimane\\n- Budget: €5000\\n- Risorse: https://newzealand.com/\\n\\nBudget totale stimato: €15.500\",\n  \"tags\": [\"viaggi\", \"avventura\", \"bucket-list\"]\n}"
+            },
+            "url": {
+              "raw": "{{notes_url}}/api/v1/notes",
+              "host": ["{{notes_url}}"],
+              "path": ["api", "v1", "notes"]
+            }
+          }
+        },
+        {
+          "name": "13. Paperino - Crea nota budget condivisa",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_paperino}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Budget e risorse Q1 2025\",\n  \"content\": \"Piano finanziario per il primo trimestre del nuovo anno:\\n\\nBudget totale approvato: €120.000\\n\\nAllocazione per categoria:\\n- Sviluppo software: €72.000 (60%)\\n- Quality Assurance & Testing: €18.000 (15%)\\n- Infrastruttura cloud: €24.000 (20%)\\n- Documentazione e training: €6.000 (5%)\\n\\nTool di gestione:\\n- Tracking spese: https://expensify.com/\\n- Project budget: https://monday.com/budget-tracking/\\n- Financial reporting: https://quickbooks.intuit.com/\\n\\nMilestone finanziarie:\\n- Gennaio: 35% budget utilizzato\\n- Febbraio: 70% budget utilizzato\\n- Marzo: 95% budget utilizzato\\n\\nNote importanti:\\n- Approvazione CFO richiesta per spese > €5k\\n- Review budget mensile ogni primo venerdì\\n- Contingency fund: €12k per imprevisti\",\n  \"tags\": [\"budget\", \"q1-2025\", \"finanze\"],\n  \"sharedWithUsernames\": [\"pippo\", \"pluto\"]\n}"
+            },
+            "url": {
+              "raw": "{{notes_url}}/api/v1/notes",
+              "host": ["{{notes_url}}"],
+              "path": ["api", "v1", "notes"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth API",
+      "description": "Endpoint per autenticazione e gestione utenti",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains tokens', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.accessToken).to.not.be.empty;",
+                  "    pm.expect(responseJson.refreshToken).to.not.be.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"TestPassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{auth_url}}/api/v1/auth/register",
+              "host": ["{{auth_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains tokens', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.accessToken).to.not.be.empty;",
+                  "    pm.expect(responseJson.refreshToken).to.not.be.empty;",
+                  "    ",
+                  "    pm.environment.set('current_access_token', responseJson.accessToken);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{current_user}}\",\n  \"password\": \"Pippo123\"\n}"
+            },
+            "url": {
+              "raw": "{{auth_url}}/api/v1/auth/login",
+              "host": ["{{auth_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains new tokens', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.accessToken).to.not.be.empty;",
+                  "    pm.expect(responseJson.refreshToken).to.not.be.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refresh_token_pippo}}\"\n}"
+            },
+            "url": {
+              "raw": "{{auth_url}}/api/v1/auth/refresh",
+              "host": ["{{auth_url}}"],
+              "path": ["api", "v1", "auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Logout User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{current_access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{auth_url}}/api/v1/auth/logout",
+              "host": ["{{auth_url}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notes API",
+      "description": "Endpoint per gestione note",
+      "item": [
+        {
+          "name": "Get All Notes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is array', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_pippo}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{notes_url}}/api/v1/notes",
+              "host": ["{{notes_url}}"],
+              "path": ["api", "v1", "notes"]
+            }
+          }
+        },
+        {
+          "name": "Get Notes - Owned Only",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_pippo}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{notes_url}}/api/v1/notes?filter=owned",
+              "host": ["{{notes_url}}"],
+              "path": ["api", "v1", "notes"],
+              "query": [
+                {
+                  "key": "filter",
+                  "value": "owned"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Notes - Shared Only",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_pluto}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{notes_url}}/api/v1/notes?filter=shared",
+              "host": ["{{notes_url}}"],
+              "path": ["api", "v1", "notes"],
+              "query": [
+                {
+                  "key": "filter",
+                  "value": "shared"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Notes by Text",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_pippo}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{notes_url}}/api/v1/notes?text=progetto",
+              "host": ["{{notes_url}}"],
+              "path": ["api", "v1", "notes"],
+              "query": [
+                {
+                  "key": "text",
+                  "value": "progetto"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filter Notes by Tags",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_pippo}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{notes_url}}/api/v1/notes?tags=team,meeting",
+              "host": ["{{notes_url}}"],
+              "path": ["api", "v1", "notes"],
+              "query": [
+                {
+                  "key": "tags",
+                  "value": "team,meeting"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Note",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Note created successfully', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.id).to.not.be.empty;",
+                  "    pm.expect(responseJson.title).to.eql('Test Note');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_pippo}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Note\",\n  \"content\": \"This is a test note content\",\n  \"tags\": [\"test\", \"example\"],\n  \"sharedWithUsernames\": [\"pluto\"]\n}"
+            },
+            "url": {
+              "raw": "{{notes_url}}/api/v1/notes",
+              "host": ["{{notes_url}}"],
+              "path": ["api", "v1", "notes"]
+            }
+          }
+        },
+        {
+          "name": "Get Note by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Note details returned', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.id).to.not.be.empty;",
+                  "    pm.expect(responseJson.title).to.not.be.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_pippo}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{notes_url}}/api/v1/notes/{{note_id_1}}",
+              "host": ["{{notes_url}}"],
+              "path": ["api", "v1", "notes", "{{note_id_1}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Note",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Note updated successfully', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.title).to.include('Updated');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_pippo}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{note_id_1}}\",\n  \"title\": \"[AGGIORNATO] Appunti riunione progetto\",\n  \"content\": \"Oggi abbiamo discusso dell'architettura del nuovo sistema. Da rivedere:\\n\\n- Documentazione API su https://swagger.io/specification/\\n- Linee guida microservizi: https://microservices.io/patterns/\\n- Best practices per Docker: https://docs.docker.com/develop/best-practices/\\n\\nUPDATE: Aggiunti nuovi requirement:\\n- Implementare rate limiting\\n- Setup monitoring con Grafana\\n- Security audit trimestrale\\n\\nProssima riunione venerdì per definire i milestone.\",\n  \"tags\": [\"riunione\", \"architettura\", \"planning\", \"aggiornato\"]\n}"
+            },
+            "url": {
+              "raw": "{{notes_url}}/api/v1/notes/{{note_id_1}}",
+              "host": ["{{notes_url}}"],
+              "path": ["api", "v1", "notes", "{{note_id_1}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Note",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_pippo}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{notes_url}}/api/v1/notes/{{note_id_5}}",
+              "host": ["{{notes_url}}"],
+              "path": ["api", "v1", "notes", "{{note_id_5}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health Checks",
+      "description": "Endpoint per verificare lo stato dei servizi",
+      "item": [
+        {
+          "name": "Gateway Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/health",
+              "host": ["{{gateway_url}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Auth Service Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{auth_url}}/health",
+              "host": ["{{auth_url}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Notes Service Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{notes_url}}/health",
+              "host": ["{{notes_url}}"],
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "collection_version",
+      "value": "1.0.0"
+    },
+    {
+      "key": "exported_at",
+      "value": "2025-09-14T21:23:19.000Z"
+    }
+  ]
+}

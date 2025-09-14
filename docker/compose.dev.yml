@@ -52,7 +52,7 @@ services:
     ports:
       - "5005:5005"
     volumes:
-      - ./backend/Papernote:/src:rw
+      - ../backend/Papernote:/src:rw
     working_dir: /src/Papernote.Gateway
     command: ["dotnet", "run", "--urls", "http://+:5005"]
     depends_on:
@@ -64,7 +64,10 @@ services:
 
   # Auth Service
   auth-service:
-    image: mcr.microsoft.com/dotnet/sdk:8.0
+    build:
+      context: ../backend/Papernote
+      dockerfile: Papernote.Auth.API/Dockerfile
+      target: development
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
@@ -89,9 +92,14 @@ services:
     ports:
       - "5003:8080"
     volumes:
-      - ./backend/Papernote:/src:rw
+      - ../backend/Papernote:/src:rw
     working_dir: /src/Papernote.Auth.API
-    command: ["dotnet", "run", "--urls", "http://+:8080"]
+    command:
+      [
+        "sh",
+        "-c",
+        "dotnet ef database update --project ../Papernote.Auth.Infrastructure --startup-project . && dotnet run --urls http://+:8080",
+      ]
     depends_on:
       postgres:
         condition: service_healthy
@@ -101,7 +109,10 @@ services:
 
   # Notes Service
   notes-service:
-    image: mcr.microsoft.com/dotnet/sdk:8.0
+    build:
+      context: ../backend/Papernote
+      dockerfile: Papernote.Notes.API/Dockerfile
+      target: development
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
@@ -119,9 +130,14 @@ services:
     ports:
       - "5004:8080"
     volumes:
-      - ./backend/Papernote:/src:rw
+      - ../backend/Papernote:/src:rw
     working_dir: /src/Papernote.Notes.API
-    command: ["dotnet", "run", "--urls", "http://+:8080"]
+    command:
+      [
+        "sh",
+        "-c",
+        "dotnet ef database update --project ../Papernote.Notes.Infrastructure --startup-project . && dotnet run --urls http://+:8080",
+      ]
     depends_on:
       postgres:
         condition: service_healthy
@@ -141,7 +157,7 @@ services:
     ports:
       - "4200:4200"
     volumes:
-      - ./frontend:/app:rw
+      - ../frontend:/app:rw
       - /app/node_modules
     working_dir: /app
     command:
