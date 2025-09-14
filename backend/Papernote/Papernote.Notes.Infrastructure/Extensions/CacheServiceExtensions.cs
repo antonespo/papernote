@@ -16,6 +16,7 @@ public static class CacheServiceExtensions
 
         services.AddScoped<ICacheService, RedisCacheService>();
         services.AddScoped<INotesCacheKeyStrategy, NotesCacheKeyStrategy>();
+        services.AddScoped<ISharedNotesCacheInvalidationService, SharedNotesCacheInvalidationService>();
 
         return services;
     }

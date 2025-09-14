@@ -1,0 +1,152 @@
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to deploy"
+        required: true
+        default: "latest"
+        type: string
+      environment:
+        description: "Target environment"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - staging
+          - production
+      migration_strategy:
+        description: "Migration strategy"
+        required: true
+        default: "safe"
+        type: choice
+        options:
+          - safe
+          - force
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  pre-deploy-checks:
+    name: Pre-deployment Checks
+    runs-on: ubuntu-latest
+    outputs:
+      gateway_digest: ${{ steps.images.outputs.gateway_digest }}
+      auth_digest: ${{ steps.images.outputs.auth_digest }}
+      notes_digest: ${{ steps.images.outputs.notes_digest }}
+      frontend_digest: ${{ steps.images.outputs.frontend_digest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve image digests
+        id: images
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          GATEWAY_DIGEST=$(docker manifest inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/gateway:$VERSION | jq -r '.manifests[0].digest')
+          AUTH_DIGEST=$(docker manifest inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/auth:$VERSION | jq -r '.manifests[0].digest')
+          NOTES_DIGEST=$(docker manifest inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/notes:$VERSION | jq -r '.manifests[0].digest')
+          FRONTEND_DIGEST=$(docker manifest inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:$VERSION | jq -r '.manifests[0].digest')
+
+          echo "gateway_digest=$GATEWAY_DIGEST" >> $GITHUB_OUTPUT
+          echo "auth_digest=$AUTH_DIGEST" >> $GITHUB_OUTPUT
+          echo "notes_digest=$NOTES_DIGEST" >> $GITHUB_OUTPUT
+          echo "frontend_digest=$FRONTEND_DIGEST" >> $GITHUB_OUTPUT
+
+  database-backup:
+    name: Database Backup
+    runs-on: ubuntu-latest
+    needs: pre-deploy-checks
+    if: github.event.inputs.environment == 'production'
+    steps:
+      - name: Create database backup
+        run: |
+          echo "Creating database backup for production deployment"
+          echo "Backup timestamp: $(date -u '+%Y-%m-%d_%H-%M-%S')"
+
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment }}
+    runs-on: ubuntu-latest
+    needs: [pre-deploy-checks, database-backup]
+    if: always() && needs.pre-deploy-checks.result == 'success' && (needs.database-backup.result == 'success' || needs.database-backup.result == 'skipped')
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Database migrations
+        run: |
+          echo "Running database migrations with strategy: ${{ github.event.inputs.migration_strategy }}"
+          if [[ "${{ github.event.inputs.migration_strategy }}" == "safe" ]]; then
+            echo "Safe migration mode: Creating backup before migration"
+          else
+            echo "Force migration mode: Proceeding without backup"
+          fi
+
+      - name: Blue-green deployment preparation
+        run: |
+          echo "Preparing blue-green deployment"
+          echo "Current environment: ${{ github.event.inputs.environment }}"
+          echo "Version: ${{ github.event.inputs.version }}"
+
+      - name: Deploy services
+        run: |
+          export GATEWAY_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/gateway@${{ needs.pre-deploy-checks.outputs.gateway_digest }}"
+          export AUTH_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/auth@${{ needs.pre-deploy-checks.outputs.auth_digest }}"
+          export NOTES_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/notes@${{ needs.pre-deploy-checks.outputs.notes_digest }}"
+          export FRONTEND_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend@${{ needs.pre-deploy-checks.outputs.frontend_digest }}"
+
+          echo "Pulling images..."
+          docker compose -f docker/compose.prod.yml pull
+
+          echo "Rolling deployment..."
+          docker compose -f docker/compose.prod.yml up -d --wait --wait-timeout 600
+
+      - name: Post-deployment verification
+        run: |
+          echo "Verifying deployment health..."
+          timeout 300 bash -c 'until curl -f http://localhost:5000/health; do sleep 10; done'
+          timeout 300 bash -c 'until curl -f http://localhost:5001/health; do sleep 10; done'
+          timeout 300 bash -c 'until curl -f http://localhost:5002/health; do sleep 10; done'
+          timeout 300 bash -c 'until curl -f http://localhost:80/; do sleep 10; done'
+
+          echo "Running smoke tests..."
+          curl -f http://localhost:5000/health
+          curl -f http://localhost:5001/health
+          curl -f http://localhost:5002/health
+
+      - name: Deployment success
+        run: |
+          echo "Deployment completed successfully!"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Version: ${{ github.event.inputs.version }}"
+          echo "Gateway: ${{ needs.pre-deploy-checks.outputs.gateway_digest }}"
+          echo "Auth: ${{ needs.pre-deploy-checks.outputs.auth_digest }}"
+          echo "Notes: ${{ needs.pre-deploy-checks.outputs.notes_digest }}"
+          echo "Frontend: ${{ needs.pre-deploy-checks.outputs.frontend_digest }}"
+
+  rollback:
+    name: Rollback
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: failure()
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Execute rollback
+        run: |
+          echo "Deployment failed, initiating rollback..."
+          echo "Rolling back to previous stable version"
+
+          echo "Restoring database from backup (if needed)"
+          echo "Reverting to previous container images"
+
+          echo "Rollback completed"

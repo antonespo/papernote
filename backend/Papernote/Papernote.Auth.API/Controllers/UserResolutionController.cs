@@ -3,6 +3,7 @@ using Papernote.Auth.API.Extensions;
 using Papernote.Auth.Core.Application.DTOs;
 using Papernote.Auth.Core.Application.Interfaces;
 using Papernote.SharedMicroservices.Results;
+using Papernote.SharedMicroservices.Security;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace Papernote.Auth.API.Controllers;
@@ -12,6 +13,7 @@ namespace Papernote.Auth.API.Controllers;
 /// </summary>
 [Route("api/internal/users")]
 [ApiController]
+[InternalApiKey]
 [SwaggerTag("Internal microservice APIs for user identifier resolution - not intended for direct client use")]
 public class UserResolutionController : ApiControllerBase
 {
