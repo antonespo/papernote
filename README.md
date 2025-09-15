@@ -2,6 +2,23 @@
 
 PaperNote è un'applicazione web per creare, gestire e condividere note testuali con altri utenti, con funzioni di ricerca e organizzazione tramite tag.
 
+## Obiettivi Realizzati
+
+- **Gestione completa del ciclo di vita delle note (CRUD)** - create, Read, Update, Delete con soft delete
+- **Sistema di condivisione tra utenti** - in fase di creazione o modifica della nota tramite username
+- **Sistema di tagging delle note** - organizzazione tramite tag personalizzati
+- **Ricerca full-text con PostgreSQL** - ricerca avanzata su titolo e contenuto con tsvector
+- **Funzionalità avanzate di caching** - Redis per rate limiting, token blacklist, input validation
+- **Health-check per ogni servizio** - per monitoraggio stato applicazione e dipendenze
+- **Implementazione UI completa** - con gestione errori e validazioni client-side
+- **Supporto ad hyperlink con sanitizzazione (lato UI)**
+- **Autenticazione JWT con refresh token**
+- **Architettura microservizi scalabile**
+- **Pipeline CI/CD automatizzate** - GitHub Actions
+- **Documentazione API tramite Swagger** - OpenAPI specs disponibili nel repository e Swagger endpoints
+- **Tool di supporto per testing** - Postman collection con scenario automatico e possibilità di testare tutte le funzionalità
+- **Uso di Git** - Feature branch e PR verso main con check enforcement
+
 ## Architettura e Componenti Principali
 
 PaperNote implementa un'architettura a microservizi per garantire scalabilità e manutenibilità.
@@ -278,7 +295,19 @@ Nella cartella `/postman` sono disponibili:
 - **`PaperNote.Docker.postman_environment.json`**: Environment per setup Docker (HTTP, porte 5003-5005)
 - **`PaperNote.Local.postman_environment.json`**: Environment per esecuzione locale (HTTPS, porte 7000-7002)
 
-Per utilizzare: importa la collezione e l'environment appropriato in Postman, quindi esegui lo scenario "Setup - Scenario Completo" per popolare automaticamente il sistema con tutti i dati di test.
+### Utenti di Test
+
+Lo scenario automatico crea i seguenti utenti:
+
+| Username     | Password    |
+| ------------ | ----------- |
+| **pippo**    | Pippo123    |
+| **pluto**    | Pluto123    |
+| **paperino** | Paperino123 |
+
+### Utilizzo
+
+Per utilizzare: importa la collezione e l'environment appropriato in Postman, quindi esegui lo scenario "Setup - Scenario Completo" per popolare automaticamente il sistema con tutti i dati di test inclusi gli utenti sopra indicati.
 
 ## Miglioramenti Futuri
 
