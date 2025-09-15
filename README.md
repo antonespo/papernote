@@ -4,17 +4,17 @@ PaperNote è un'applicazione web per creare, gestire e condividere note testuali
 
 ## Obiettivi Realizzati
 
-- **Gestione completa del ciclo di vita delle note (CRUD)** - create, Read, Update, Delete con soft delete
+- **Gestione completa del ciclo di vita delle note (CRUD)** - Create, Read, Update, Delete con soft delete
 - **Sistema di condivisione tra utenti** - in fase di creazione o modifica della nota tramite username
 - **Sistema di tagging delle note** - organizzazione tramite tag personalizzati
 - **Ricerca full-text con PostgreSQL** - ricerca avanzata su titolo e contenuto con tsvector
-- **Funzionalità avanzate di caching** - Redis per rate limiting, token blacklist, input validation
+- **Funzionalità avanzate con Redis** - per caching, rate limiting, token blacklist
 - **Health-check per ogni servizio** - per monitoraggio stato applicazione e dipendenze
 - **Implementazione UI completa** - con gestione errori e validazioni client-side
 - **Supporto ad hyperlink con sanitizzazione (lato UI)**
 - **Autenticazione JWT con refresh token**
 - **Architettura microservizi scalabile**
-- **Pipeline CI/CD automatizzate** - GitHub Actions
+- **Pipeline CI/CD automatizzate** - tramite GitHub Actions
 - **Documentazione API tramite Swagger** - OpenAPI specs disponibili nel repository e Swagger endpoints
 - **Tool di supporto per testing** - Postman collection con scenario automatico e possibilità di testare tutte le funzionalità
 - **Uso di Git** - Feature branch e PR verso main con check enforcement
